@@ -46,15 +46,16 @@ jobs:
           releaseBody: |
             ## ✨ Gleam ${{ github.ref_name }} — Modern Frosted Glass Task Drawer
 
-            ### 🚀 What's New:
-            - **Right-Docked Edge Drawer:** Seamlessly docks to the right screen edge with intelligent work area height calculation.
-            - **Global Shortcut:** Summon or dismiss with `Ctrl + Shift + Space` anywhere on Windows.
-            - **System Tray Resident:** Completely silent with zero taskbar clutter.
-            - **Frosted Acrylic Glassmorphism:** Liquid transparency with dynamic ambient glow orbs and 5 curated themes.
-            - **Dual-Calendar Engine:** Full Persian (Solar Hijri) and Gregorian calendar support.
-            - **Productivity Suite:** Daily focus ring, priority levels, subtasks checklist, search, and synthesized crystal chime audio.
+            ### 🚀 What's New in v1.0.1:
+            - **Windows Startup Integration:** Toggle auto-start silently on Windows boot via system registry without UAC friction.
+            - **Hardware-Accelerated Slide & Fade:** Fluid native drawer entrance and exit animations docked to the right screen edge.
+            - **Strict Bilingual Parity (100% English & 100% Persian):** Seamless bidirectional category translation, localized system tray menus, calendar controls, and prompts.
+            - **Native Desktop App Hardening:** Disabled default browser context menus, F12 inspect tools, and browser refresh shortcuts for a pure desktop app feel.
+            - **Glassmorphic Confirmation Dialog:** Replaced ugly web confirm popups with a luxury translucent danger modal.
+            - **GitHub Releases Auto-Updater:** Real-time update checks and glass notification banner for incoming updates.
+            - **Refreshed Brand Logo & Icons:** High-resolution glassy cyan monogram and 53 platform-specific icon assets.
 
             ### 📦 Downloads:
-            Download the installer (`.exe` or `.msi`) below to get started on Windows.
+            Download the Windows setup installer (`.exe`) or Windows Installer (`.msi`) below.
           releaseDraft: false
           prerelease: false
