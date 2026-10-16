@@ -626,8 +626,8 @@ function renderProgress() {
     el.currentPersianDate.textContent = formatFullDateByLang(new Date());
   }
 
-  // به‌روزرسانی دور حلقه
-  const maxDash = 175.92;
+  // به‌روزرسانی دور حلقه بر اساس شعاع ۲۲ (محیط = 138.23)
+  const maxDash = 138.23;
   const offset = maxDash - (percent / 100) * maxDash;
   el.ringProgress.style.strokeDashoffset = offset;
 
