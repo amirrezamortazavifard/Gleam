@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build Tauri App & Publish Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Gleam ${{ github.ref_name }}'
+          releaseBody: |
+            ## ✨ Gleam ${{ github.ref_name }} — Modern Frosted Glass Task Drawer
+
+            ### 🚀 What's New:
+            - **Right-Docked Edge Drawer:** Seamlessly docks to the right screen edge with intelligent work area height calculation.
+            - **Global Shortcut:** Summon or dismiss with `Ctrl + Shift + Space` anywhere on Windows.
+            - **System Tray Resident:** Completely silent with zero taskbar clutter.
+            - **Frosted Acrylic Glassmorphism:** Liquid transparency with dynamic ambient glow orbs and 5 curated themes.
+            - **Dual-Calendar Engine:** Full Persian (Solar Hijri) and Gregorian calendar support.
+            - **Productivity Suite:** Daily focus ring, priority levels, subtasks checklist, search, and synthesized crystal chime audio.
+
+            ### 📦 Downloads:
+            Download the installer (`.exe` or `.msi`) below to get started on Windows.
+          releaseDraft: false
+          prerelease: false

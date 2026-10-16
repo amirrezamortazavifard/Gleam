@@ -300,7 +300,7 @@ pub fn run() {
                     // Apply glass / acrylic blur effect on Windows with subtle tint so wallpaper blurs through
                     if let Err(e) = window_vibrancy::apply_acrylic(&win, Some((18, 26, 44, 75))) {
                         eprintln!("apply_acrylic error: {e}");
-                        if let Err(_e2) = window_vibrancy::apply_mica(&win, Some(true)) {
+                        if let Err(e2) = window_vibrancy::apply_mica(&win, Some(true)) {
                             eprintln!("apply_mica error: {e2}");
                             let _ = window_vibrancy::apply_blur(&win, Some((18, 26, 44, 75)));
                         }
