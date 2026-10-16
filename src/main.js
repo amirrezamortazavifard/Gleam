@@ -200,6 +200,10 @@ const I18N = {
     clearCompleted: "پاک کردن انجام‌شده‌ها",
     clearCompletedTitle: "حذف تمام کارهای انجام‌شده",
     confirmClear: "آیا مطمئن هستید که می‌خواهید تمام کارهای انجام‌شده را پاک کنید؟",
+    confirmClearTitle: "پاکسازی کارهای انجام‌شده",
+    confirmClearMsg: (count) => `آیا از حذف ${toPersianNum(count)} کار انجام‌شده اطمینان دارید؟ این عملیات غیرقابل بازگشت است.`,
+    confirmAccept: "پاک کردن",
+    confirmCancel: "انصراف",
     confirmDelete: "آیا از حذف این کار اطمینان دارید؟",
     footerShowing: (shown, total) => `${toPersianNum(shown)} از ${toPersianNum(total)} کار نمایش داده شده`,
     mottoZero: "هنوز کاری نداری. امروز رو پربار کن!",
@@ -322,6 +326,10 @@ const I18N = {
     clearCompleted: "Clear Completed",
     clearCompletedTitle: "Delete all completed tasks",
     confirmClear: "Are you sure you want to clear all completed tasks?",
+    confirmClearTitle: "Clear Completed Tasks",
+    confirmClearMsg: (count) => `Are you sure you want to clear ${count} completed task${count > 1 ? "s" : ""}? This action cannot be undone.`,
+    confirmAccept: "Clear Tasks",
+    confirmCancel: "Cancel",
     confirmDelete: "Are you sure you want to delete this task?",
     footerShowing: (shown, total) => `Showing ${shown} of ${total} tasks`,
     mottoZero: "No tasks yet. Make today productive!",
@@ -623,6 +631,13 @@ function initElements() {
   el.btnEditDelete = document.getElementById("btn-edit-delete");
   el.btnEditCancel = document.getElementById("btn-edit-cancel");
   el.btnEditSave = document.getElementById("btn-edit-save");
+
+  // Confirm Modal Elements
+  el.confirmModal = document.getElementById("confirm-modal");
+  el.confirmModalTitle = document.getElementById("confirm-modal-title");
+  el.confirmModalMessage = document.getElementById("confirm-modal-message");
+  el.btnConfirmCancel = document.getElementById("btn-confirm-cancel");
+  el.btnConfirmAccept = document.getElementById("btn-confirm-accept");
 }
 
 // Persistence
@@ -770,17 +785,51 @@ function renderProgress() {
   }
 }
 
+// نگاشت دوزبانه دسته‌بندی‌ها برای حفظ یکپارچگی ۱۰۰٪ زبان
+const CATEGORY_MAP_TO_EN = {
+  "کار": "Work",
+  "کاری": "Work",
+  "شخصی": "Personal",
+  "پروژه‌ها": "Projects",
+  "مطالعه": "Study",
+  "سلامتی": "Health",
+  "ایده‌ها": "Ideas",
+  "روزانه": "Daily",
+  "عمومی": "General",
+  "همه": "All"
+};
+const CATEGORY_MAP_TO_FA = {
+  "Work": "کار",
+  "Personal": "شخصی",
+  "Projects": "پروژه‌ها",
+  "Study": "مطالعه",
+  "Health": "سلامتی",
+  "Ideas": "ایده‌ها",
+  "Daily": "روزانه",
+  "General": "عمومی",
+  "All": "همه"
+};
+
+function getLocalizedCategory(cat, lang = settings.lang || "fa") {
+  if (!cat) return lang === "fa" ? "عمومی" : "General";
+  if (lang === "fa") {
+    return CATEGORY_MAP_TO_FA[cat] || cat;
+  } else {
+    return CATEGORY_MAP_TO_EN[cat] || cat;
+  }
+}
+
 function renderCategories() {
   const lang = settings.lang || "fa";
   const t = I18N[lang] || I18N.fa;
   const allLabel = t.categoryAll;
 
-  // جمع‌آوری تمام دسته‌بندی‌های منحصربه‌فرد
+  // جمع‌آوری تمام دسته‌بندی‌های منحصربه‌فرد با ترجمه خودکار
   const categoriesMap = {};
   categoriesMap[allLabel] = todos.length;
   todos.forEach((item) => {
-    const cat = item.category || (lang === "fa" ? "عمومی" : "General");
-    categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
+    const localizedCat = getLocalizedCategory(item.category, lang);
+    categoriesMap[localizedCat] = (categoriesMap[localizedCat] || 0) + 1;
   });
 
   if (!categoriesMap[currentCategory] && currentCategory !== allLabel) {
@@ -813,9 +862,12 @@ function renderTasks() {
     if (currentFilter === "completed" && !item.completed) return false;
     if (currentFilter === "high" && item.priority !== "high") return false;
 
-    // فیلتر دسته‌بندی
-    if (currentCategory !== allLabel && currentCategory !== "همه" && currentCategory !== "All" && item.category !== currentCategory) {
-      return false;
+    // فیلتر دسته‌بندی با بررسی نام محلی و ذخیره‌شده
+    if (currentCategory !== allLabel && currentCategory !== "همه" && currentCategory !== "All") {
+      const itemCatLocalized = getLocalizedCategory(item.category, lang);
+      if (itemCatLocalized !== currentCategory && item.category !== currentCategory) {
+        return false;
+      }
     }
 
     // جستجو
@@ -927,7 +979,7 @@ function createTaskCard(task) {
         </div>
         <div class="task-badges">
           ${prioBadge}
-          <span class="task-tag category-badge">${escapeHtml(task.category || (lang === "fa" ? "عمومی" : "General"))}</span>
+          <span class="task-tag category-badge">${escapeHtml(getLocalizedCategory(task.category, lang))}</span>
           ${dueHtml}
           ${subtasksBadge}
         </div>
@@ -1700,14 +1752,133 @@ function updateCategoryDropdowns(lang) {
   }
 }
 
+// ==========================================================================
+// کنترل‌کننده مودال اختصاصی تأیید عملیات (Glass Confirmation Modal)
+// ==========================================================================
+let confirmActionCallback = null;
+
+function showConfirmModal({ title, message, acceptText, cancelText, onAccept }) {
+  const lang = settings.lang || "fa";
+  const t = I18N[lang] || I18N.fa;
+
+  if (el.confirmModalTitle) el.confirmModalTitle.textContent = title || t.confirmClearTitle || "تأیید عملیات";
+  if (el.confirmModalMessage) el.confirmModalMessage.textContent = message || t.confirmClear;
+  if (el.btnConfirmAccept) el.btnConfirmAccept.textContent = acceptText || t.confirmAccept || (lang === "fa" ? "پاک کردن" : "Clear Tasks");
+  if (el.btnConfirmCancel) el.btnConfirmCancel.textContent = cancelText || t.confirmCancel || (lang === "fa" ? "انصراف" : "Cancel");
+
+  confirmActionCallback = onAccept;
+  if (el.confirmModal) {
+    el.confirmModal.style.display = "flex";
+  }
+}
+
+function closeConfirmModal() {
+  if (el.confirmModal) {
+    el.confirmModal.style.display = "none";
+  }
+  confirmActionCallback = null;
+}
+
+// ==========================================================================
+// قفل رفتارهای پیش‌فرض مرورگر برای تبدیل به حس خالص نرم‌افزار دسکتاپ (Desktop App Hardening)
+// ==========================================================================
+function hardenDesktopExperience() {
+  // غیرفعال‌سازی راست‌کلیک پیش‌فرض مرورگر در سرتاسر برنامه
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    return false;
+  });
+
+  // مسدودسازی کلیدهای توسعه‌دهنده، رفرش و شورتکات‌های وب
+  window.addEventListener("keydown", (e) => {
+    const key = e.key;
+    const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+
+    // F12 (DevTools / Inspect)
+    if (key === "F12") {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Ctrl + R یا Ctrl + Shift + R (رفرش صفحه)
+    if (isCtrlOrMeta && (key === "r" || key === "R")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // F5 یا Ctrl + F5 (رفرش صفحه)
+    if (key === "F5") {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Ctrl + Shift + I یا Ctrl + Shift + J یا Ctrl + Shift + C (ابزار Inspect مرورگر)
+    if (isCtrlOrMeta && e.shiftKey && (key === "I" || key === "i" || key === "J" || key === "j" || key === "C" || key === "c")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Ctrl + U (مشاهده سورس کد وب)
+    if (isCtrlOrMeta && (key === "u" || key === "U")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Ctrl + P (چاپ مرورگر)
+    if (isCtrlOrMeta && (key === "p" || key === "P")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, { capture: true });
+
+  // جلوگیری از کشیدن و رها کردن تصاویر
+  document.addEventListener("dragstart", (e) => {
+    if (e.target && e.target.tagName === "IMG") {
+      e.preventDefault();
+    }
+  });
+}
+
 // Event Listeners Setup
 function setupListeners() {
+  // قفل رفتار مرورگر و فعال‌سازی حس اپلیکیشن دسکتاپ
+  hardenDesktopExperience();
+
+  // رویدادهای مودال تأیید عملیات
+  if (el.btnConfirmCancel) {
+    el.btnConfirmCancel.addEventListener("click", closeConfirmModal);
+  }
+  if (el.btnConfirmAccept) {
+    el.btnConfirmAccept.addEventListener("click", async () => {
+      const cb = confirmActionCallback;
+      closeConfirmModal();
+      if (typeof cb === "function") {
+        await cb();
+      }
+    });
+  }
+  if (el.confirmModal) {
+    el.confirmModal.addEventListener("click", (e) => {
+      if (e.target === el.confirmModal) {
+        closeConfirmModal();
+      }
+    });
+  }
+
   // Drawer close button & hotkey
   el.btnClose.addEventListener("click", closeDrawer);
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (el.editTaskModal && el.editTaskModal.style.display !== "none") {
+      if (el.confirmModal && el.confirmModal.style.display !== "none") {
+        closeConfirmModal();
+      } else if (el.editTaskModal && el.editTaskModal.style.display !== "none") {
         closeEditTaskModal();
       } else if (el.calendarModal && el.calendarModal.style.display !== "none") {
         closeCalendarModal();
@@ -2073,22 +2244,33 @@ function setupListeners() {
     });
   }
 
-  // Clear completed with confirmation
-  el.btnClearCompleted.addEventListener("click", async () => {
+  // Clear completed with custom frosted glass confirmation modal
+  el.btnClearCompleted.addEventListener("click", () => {
     const completedCount = todos.filter((t) => t.completed).length;
     if (completedCount === 0) return;
 
     const lang = settings.lang || "fa";
-    const confirmMsg = lang === "fa"
-      ? `آیا از حذف ${toPersianNum(completedCount)} کار انجام‌شده اطمینان دارید؟`
-      : `Are you sure you want to clear ${completedCount} completed tasks?`;
+    const t = I18N[lang] || I18N.fa;
 
-    if (window.confirm(confirmMsg)) {
-      todos = todos.filter((t) => !t.completed);
-      playSound("delete");
-      await persistTodos();
-      render();
-    }
+    const title = t.confirmClearTitle || (lang === "fa" ? "پاکسازی کارهای انجام‌شده" : "Clear Completed Tasks");
+    const message = (typeof t.confirmClearMsg === "function")
+      ? t.confirmClearMsg(completedCount)
+      : (lang === "fa" ? `آیا از حذف ${toPersianNum(completedCount)} کار انجام‌شده اطمینان دارید؟` : `Are you sure you want to clear ${completedCount} completed tasks?`);
+    const acceptText = t.confirmAccept || (lang === "fa" ? "پاک کردن" : "Clear Tasks");
+    const cancelText = t.confirmCancel || (lang === "fa" ? "انصراف" : "Cancel");
+
+    showConfirmModal({
+      title,
+      message,
+      acceptText,
+      cancelText,
+      onAccept: async () => {
+        todos = todos.filter((t) => !t.completed);
+        playSound("delete");
+        await persistTodos();
+        render();
+      }
+    });
   });
 
   // Focus add input when opened via tray
