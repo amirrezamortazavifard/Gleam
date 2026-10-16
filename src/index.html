@@ -67,6 +67,31 @@
         </div>
       </header>
 
+      <!-- بنر اعلان نسخه جدید نرم‌افزار (Liquid Glass Update Notification) -->
+      <aside id="update-banner" class="glass-update-banner" style="display: none;" aria-live="polite">
+        <div class="update-banner-glow"></div>
+        <div class="update-banner-body">
+          <div class="update-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <div class="update-banner-texts">
+            <div class="update-title-line">
+              <span id="update-banner-title" class="update-banner-title">نسخه جدید منتشر شد!</span>
+              <span id="update-badge-ver" class="update-badge-ver">v1.0.1</span>
+            </div>
+            <p id="update-banner-desc" class="update-banner-desc">به‌روزرسانی با قابلیت‌ها و پایداری بیشتر در گیت‌هاب در دسترس است.</p>
+          </div>
+        </div>
+        <div class="update-banner-actions">
+          <button type="button" id="btn-update-download" class="update-btn-download" title="دریافت نسخه جدید">دانلود</button>
+          <button type="button" id="btn-update-dismiss" class="update-btn-dismiss" title="بستن اعلان">&times;</button>
+        </div>
+      </aside>
+
       <!-- نوار تاریخ روز تقویم فارسی -->
       <div id="persian-date-banner" class="persian-date-banner glass-interactive" role="button" tabindex="0" title="کلیک برای باز کردن تقویم فارسی">
         <div class="date-banner-left">
@@ -342,6 +367,32 @@
               <div class="setting-text">
                 <strong id="setting-title-shortcut">کلید میانبر سراسری</strong>
                 <p id="setting-desc-shortcut">در هر برنامه‌ای پنل کارها را باز/بسته کنید</p>
+              </div>
+            </div>
+
+            <!-- بررسی به‌روزرسانی نرم‌افزار (GitHub Updates) -->
+            <div class="setting-item update-setting full-width">
+              <div class="update-setting-row">
+                <div class="setting-text">
+                  <div class="setting-title-with-badge">
+                    <strong id="setting-title-update">به‌روزرسانی نرم‌افزار</strong>
+                    <span id="update-current-version-badge" class="version-badge">v1.0.0</span>
+                  </div>
+                  <p id="setting-desc-update">بررسی انتشار آخرین نسخه از گیت‌هاب</p>
+                </div>
+                <button type="button" id="btn-check-updates" class="glass-btn update-check-btn">
+                  <svg id="update-spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="update-icon-svg">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  <span id="btn-check-updates-text">بررسی نسخه جدید</span>
+                </button>
+              </div>
+              <div id="update-status-box" class="update-status-box" style="display: none;">
+                <div class="update-status-msg" id="update-status-msg"></div>
+                <div class="update-status-actions" id="update-status-actions" style="display: none;">
+                  <button type="button" id="btn-settings-download-update" class="primary-pill-btn small-pill">دانلود نسخه جدید</button>
+                  <button type="button" id="btn-settings-view-releases" class="secondary-btn small-btn">مشاهده در گیت‌هاب</button>
+                </div>
               </div>
             </div>
 

@@ -256,7 +256,20 @@ const I18N = {
     calPrevMonth: "ماه قبل",
     calNextMonth: "ماه بعد",
     calClose: "بستن تقویم",
-    calPendingTasks: "دارای کارهای انجام‌نشده"
+    calPendingTasks: "دارای کارهای انجام‌نشده",
+    updateBannerTitle: "نسخه جدید منتشر شد!",
+    updateBannerDesc: "به‌روزرسانی با قابلیت‌ها و پایداری بیشتر در گیت‌هاب در دسترس است.",
+    updateBtnDownload: "دانلود",
+    updateBtnDismiss: "بستن",
+    settingUpdateTitle: "به‌روزرسانی نرم‌افزار",
+    settingUpdateDesc: "بررسی انتشار آخرین نسخه از گیت‌هاب",
+    btnCheckUpdates: "بررسی نسخه جدید",
+    updateChecking: "در حال بررسی گیت‌هاب...",
+    updateUpToDate: "شما از آخرین نسخه نرم‌افزار استفاده می‌کنید.",
+    updateAvailable: (ver) => `نسخه جدید ${ver} آماده دریافت است!`,
+    updateError: "خطا در اتصال به گیت‌هاب. وضعیت اینترنت را بررسی کنید.",
+    btnDownloadUpdate: "دانلود نسخه جدید",
+    btnViewReleases: "مشاهده در گیت‌هاب"
   },
   en: {
     appTitle: "Gleam - Frosted Glass Task Drawer",
@@ -365,7 +378,20 @@ const I18N = {
     calPrevMonth: "Previous Month",
     calNextMonth: "Next Month",
     calClose: "Close Calendar",
-    calPendingTasks: "Has pending tasks"
+    calPendingTasks: "Has pending tasks",
+    updateBannerTitle: "New Version Available!",
+    updateBannerDesc: "An update with new features and improvements is ready on GitHub.",
+    updateBtnDownload: "Download",
+    updateBtnDismiss: "Dismiss",
+    settingUpdateTitle: "Software Updates",
+    settingUpdateDesc: "Check for the latest releases on GitHub",
+    btnCheckUpdates: "Check for Updates",
+    updateChecking: "Checking GitHub...",
+    updateUpToDate: "You are already using the latest version.",
+    updateAvailable: (ver) => `New version ${ver} is available for download!`,
+    updateError: "Could not reach GitHub. Please check your internet connection.",
+    btnDownloadUpdate: "Download Update",
+    btnViewReleases: "View on GitHub"
   }
 };
 
@@ -568,6 +594,22 @@ function initElements() {
   el.editTaskForm = document.getElementById("edit-task-form");
   el.btnCloseEdit = document.getElementById("btn-close-edit");
   el.editTaskId = document.getElementById("edit-task-id");
+
+  // Updates Elements
+  el.updateBanner = document.getElementById("update-banner");
+  el.updateBannerTitle = document.getElementById("update-banner-title");
+  el.updateBadgeVer = document.getElementById("update-badge-ver");
+  el.updateBannerDesc = document.getElementById("update-banner-desc");
+  el.btnUpdateDownload = document.getElementById("btn-update-download");
+  el.btnUpdateDismiss = document.getElementById("btn-update-dismiss");
+  el.updateCurrentVersionBadge = document.getElementById("update-current-version-badge");
+  el.btnCheckUpdates = document.getElementById("btn-check-updates");
+  el.btnCheckUpdatesText = document.getElementById("btn-check-updates-text");
+  el.updateStatusBox = document.getElementById("update-status-box");
+  el.updateStatusMsg = document.getElementById("update-status-msg");
+  el.updateStatusActions = document.getElementById("update-status-actions");
+  el.btnSettingsDownloadUpdate = document.getElementById("btn-settings-download-update");
+  el.btnSettingsViewReleases = document.getElementById("btn-settings-view-releases");
   el.editTaskTitleInput = document.getElementById("edit-task-title-input");
   el.editTaskNotesInput = document.getElementById("edit-task-notes-input");
   el.editTaskCategorySelect = document.getElementById("edit-task-category-select");
@@ -1300,6 +1342,125 @@ function applySelectedDate(isoDate) {
 }
 
 // ==========================================================================
+// سیستم بررسی و اعلان نسخه جدید (GitHub Releases Auto-Updater)
+// ==========================================================================
+const CURRENT_APP_VERSION = "1.0.0";
+const GITHUB_REPO = "amirrezamortazavifard/Gleam";
+const GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/amirrezamortazavifard/Gleam/releases/latest";
+const GITHUB_RELEASES_PAGE = "https://github.com/amirrezamortazavifard/Gleam/releases";
+
+let latestReleaseInfo = null;
+
+async function openExternalLink(url) {
+  if (!url) return;
+  try {
+    await invoke("open_external", { url });
+  } catch (e) {
+    window.open(url, "_blank");
+  }
+}
+
+function isNewerVersion(remoteTag, localVer) {
+  if (!remoteTag) return false;
+  const cleanRemote = remoteTag.replace(/^v/i, "").trim();
+  const cleanLocal = localVer.replace(/^v/i, "").trim();
+
+  const rParts = cleanRemote.split(".").map(Number);
+  const lParts = cleanLocal.split(".").map(Number);
+
+  for (let i = 0; i < Math.max(rParts.length, lParts.length); i++) {
+    const r = isNaN(rParts[i]) ? 0 : rParts[i];
+    const l = isNaN(lParts[i]) ? 0 : lParts[i];
+    if (r > l) return true;
+    if (r < l) return false;
+  }
+  return false;
+}
+
+async function checkForUpdates(isAuto = false) {
+  const lang = settings.lang || "fa";
+  const t = I18N[lang] || I18N.fa;
+
+  if (!isAuto && el.btnCheckUpdates) {
+    el.btnCheckUpdates.classList.add("loading");
+    if (el.btnCheckUpdatesText) el.btnCheckUpdatesText.textContent = t.updateChecking;
+    if (el.updateStatusBox && el.updateStatusMsg) {
+      el.updateStatusBox.style.display = "flex";
+      el.updateStatusMsg.className = "update-status-msg info";
+      el.updateStatusMsg.textContent = t.updateChecking;
+      if (el.updateStatusActions) el.updateStatusActions.style.display = "none";
+    }
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch(GITHUB_LATEST_RELEASE_URL, {
+      headers: {
+        "Accept": "application/vnd.github.v3+json"
+      },
+      cache: "no-store",
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    latestReleaseInfo = data;
+
+    const hasUpdate = isNewerVersion(data.tag_name, CURRENT_APP_VERSION);
+
+    if (hasUpdate) {
+      // به‌روزرسانی بنر بالای صفحه
+      if (el.updateBanner && el.updateBadgeVer) {
+        el.updateBadgeVer.textContent = data.tag_name;
+
+        // اگر قبلاً در این سشن توسط کاربر بسته نشده باشد
+        const dismissedTag = sessionStorage.getItem("gleam_dismissed_update");
+        if (dismissedTag !== data.tag_name) {
+          el.updateBanner.style.display = "flex";
+        }
+      }
+
+      // به‌روزرسانی در بخش تنظیمات
+      if (el.updateStatusBox && el.updateStatusMsg) {
+        el.updateStatusBox.style.display = "flex";
+        el.updateStatusMsg.className = "update-status-msg success";
+        el.updateStatusMsg.textContent = (typeof t.updateAvailable === "function")
+          ? t.updateAvailable(data.tag_name)
+          : `${t.updateBannerTitle} (${data.tag_name})`;
+        if (el.updateStatusActions) el.updateStatusActions.style.display = "flex";
+      }
+    } else {
+      if (!isAuto && el.updateStatusBox && el.updateStatusMsg) {
+        el.updateStatusBox.style.display = "flex";
+        el.updateStatusMsg.className = "update-status-msg info";
+        el.updateStatusMsg.textContent = t.updateUpToDate;
+        if (el.updateStatusActions) el.updateStatusActions.style.display = "none";
+      }
+    }
+  } catch (err) {
+    console.warn("Update check error:", err);
+    if (!isAuto && el.updateStatusBox && el.updateStatusMsg) {
+      el.updateStatusBox.style.display = "flex";
+      el.updateStatusMsg.className = "update-status-msg error";
+      el.updateStatusMsg.textContent = t.updateError;
+      if (el.updateStatusActions) el.updateStatusActions.style.display = "none";
+    }
+  } finally {
+    if (!isAuto && el.btnCheckUpdates) {
+      el.btnCheckUpdates.classList.remove("loading");
+      if (el.btnCheckUpdatesText) el.btnCheckUpdatesText.textContent = t.btnCheckUpdates;
+    }
+  }
+}
+
+// ==========================================================================
 // کنترل‌کننده تغییر زبان (Language Switcher Controller)
 // ==========================================================================
 function applyLanguage(lang) {
@@ -1486,6 +1647,21 @@ function applyLanguage(lang) {
   if (el.btnExportData) el.btnExportData.textContent = t.btnExport;
   if (el.btnSampleData) el.btnSampleData.textContent = t.btnSample;
   if (el.btnCloseSettings) el.btnCloseSettings.title = t.closeTitle;
+
+  // به‌روزرسانی بخش آپدیت نرم‌افزار
+  if (el.updateCurrentVersionBadge) el.updateCurrentVersionBadge.textContent = `v${CURRENT_APP_VERSION}`;
+  if (el.updateBannerTitle) el.updateBannerTitle.textContent = t.updateBannerTitle;
+  if (el.updateBannerDesc) el.updateBannerDesc.textContent = t.updateBannerDesc;
+  if (el.btnUpdateDownload) el.btnUpdateDownload.textContent = t.updateBtnDownload;
+  if (el.btnUpdateDismiss) el.btnUpdateDismiss.title = t.updateBtnDismiss;
+
+  const settingTitleUpdate = document.getElementById("setting-title-update");
+  if (settingTitleUpdate) settingTitleUpdate.textContent = t.settingUpdateTitle;
+  const settingDescUpdate = document.getElementById("setting-desc-update");
+  if (settingDescUpdate) settingDescUpdate.textContent = t.settingUpdateDesc;
+  if (el.btnCheckUpdatesText) el.btnCheckUpdatesText.textContent = t.btnCheckUpdates;
+  if (el.btnSettingsDownloadUpdate) el.btnSettingsDownloadUpdate.textContent = t.btnDownloadUpdate;
+  if (el.btnSettingsViewReleases) el.btnSettingsViewReleases.textContent = t.btnViewReleases;
 
   // به‌روزرسانی منوی سیستم تری در Rust
   try {
@@ -1938,6 +2114,42 @@ function setupListeners() {
       closeDrawer();
     });
   }
+
+  // رویدادهای سیستم به‌روزرسانی (GitHub Updates)
+  if (el.btnCheckUpdates) {
+    el.btnCheckUpdates.addEventListener("click", () => {
+      checkForUpdates(false);
+    });
+  }
+
+  if (el.btnUpdateDownload) {
+    el.btnUpdateDownload.addEventListener("click", () => {
+      const url = (latestReleaseInfo && latestReleaseInfo.html_url) ? latestReleaseInfo.html_url : GITHUB_RELEASES_PAGE;
+      openExternalLink(url);
+    });
+  }
+
+  if (el.btnUpdateDismiss) {
+    el.btnUpdateDismiss.addEventListener("click", () => {
+      if (el.updateBanner) el.updateBanner.style.display = "none";
+      if (latestReleaseInfo && latestReleaseInfo.tag_name) {
+        sessionStorage.setItem("gleam_dismissed_update", latestReleaseInfo.tag_name);
+      }
+    });
+  }
+
+  if (el.btnSettingsDownloadUpdate) {
+    el.btnSettingsDownloadUpdate.addEventListener("click", () => {
+      const url = (latestReleaseInfo && latestReleaseInfo.html_url) ? latestReleaseInfo.html_url : GITHUB_RELEASES_PAGE;
+      openExternalLink(url);
+    });
+  }
+
+  if (el.btnSettingsViewReleases) {
+    el.btnSettingsViewReleases.addEventListener("click", () => {
+      openExternalLink(GITHUB_RELEASES_PAGE);
+    });
+  }
 }
 
 // Bootstrap
@@ -1947,5 +2159,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   setupListeners();
   await loadData();
   applyLanguage(settings.lang || "fa");
+
+  // بررسی خودکار نسخه جدید در پس‌زمینه (در صورت اتصال به اینترنت)
+  setTimeout(() => {
+    checkForUpdates(true);
+  }, 3500);
 });
 

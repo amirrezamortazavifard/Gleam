@@ -223,6 +223,24 @@ fn set_autostart(enable: bool) -> Result<bool, String> {
     Ok(check_windows_autostart())
 }
 
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let _ = Command::new("rundll32")
+            .args(&["url.dll,FileProtocolHandler", &url])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = url;
+        Ok(())
+    }
+}
+
 /// Computes the exact work area on Windows (excluding the Windows taskbar)
 /// or falls back to monitor info.
 fn get_screen_work_area(win: &WebviewWindow) -> (i32, i32, u32, u32) {
@@ -341,7 +359,8 @@ pub fn run() {
             show_drawer,
             hide_drawer,
             toggle_drawer,
-            update_tray_menu
+            update_tray_menu,
+            open_external
         ])
         .setup(|app| {
             let handle = app.handle().clone();
