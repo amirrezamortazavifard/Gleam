@@ -101,6 +101,7 @@ const GREGORIAN_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "A
 const GREGORIAN_MONTHS_FULL_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const GREGORIAN_WEEKDAYS_SHORT_EN = ["Sa", "Su", "Mo", "Tu", "We", "Th", "Fr"];
 const JALALI_WEEKDAYS_SHORT_FA = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
+const JALALI_MONTHS_EN = ["Farvardin", "Ordibehesht", "Khordad", "Tir", "Mordad", "Shahrivar", "Mehr", "Aban", "Azar", "Dey", "Bahman", "Esfand"];
 
 // نمایش تاریخ کامل در نوار هدر تقویم
 function formatFullPersianDate(date = new Date()) {
@@ -1113,14 +1114,18 @@ function renderCalendar() {
   if (el.calWeekdaysContainer) {
     el.calWeekdaysContainer.innerHTML = "";
     const weekdaysList = (lang === "fa") ? JALALI_WEEKDAYS_SHORT_FA : GREGORIAN_WEEKDAYS_SHORT_EN;
-    weekdaysList.forEach((w) => {
+    weekdaysList.forEach((w, idx) => {
       const span = document.createElement("span");
       span.textContent = w;
+      if (lang === "fa" && idx === 6) {
+        span.style.color = "var(--accent-danger)";
+        span.style.opacity = "0.85";
+      }
       el.calWeekdaysContainer.appendChild(span);
     });
   }
 
-  el.calMonthName.textContent = JALALI_MONTHS[calState.viewMonth - 1];
+  el.calMonthName.textContent = (lang === "fa") ? JALALI_MONTHS[calState.viewMonth - 1] : JALALI_MONTHS_EN[calState.viewMonth - 1];
   el.calYearNum.textContent = toNumByLang(calState.viewYear);
 
   // روز هفته برای اول ماه شمسی (شنبه = 0، یکشنبه = 1 ... جمعه = 6)
@@ -1162,6 +1167,10 @@ function renderCalendar() {
 
     if (calState.selectedIso === isoDate || activeSelected === isoDate) {
       cell.classList.add("selected");
+    }
+
+    if (lang === "fa" && (startDayOfWeek + d - 1) % 7 === 6) {
+      cell.classList.add("weekend");
     }
 
     const hasTasks = todos.some((t) => t.due_date === isoDate && !t.completed);
