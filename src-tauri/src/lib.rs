@@ -50,6 +50,8 @@ pub struct AppSettings {
     pub theme: String,
     #[serde(default = "default_lang")]
     pub lang: String,
+    #[serde(default)]
+    pub launch_at_startup: bool,
 }
 
 impl Default for AppSettings {
@@ -61,12 +63,83 @@ impl Default for AppSettings {
             shortcut: "CommandOrControl+Shift+Space".to_string(),
             theme: "theme-apple-frost".to_string(),
             lang: "fa".to_string(),
+            launch_at_startup: false,
         }
     }
 }
 
 pub struct AppState {
     pub settings: Mutex<AppSettings>,
+}
+
+#[cfg(target_os = "windows")]
+fn set_windows_autostart(enable: bool) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let app_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let path_str = format!("\"{}\"", app_path.to_string_lossy());
+
+    if enable {
+        let _ = Command::new("reg")
+            .args(&[
+                "add",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                "Gleam",
+                "/t",
+                "REG_SZ",
+                "/d",
+                &path_str,
+                "/f",
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+    } else {
+        let _ = Command::new("reg")
+            .args(&[
+                "delete",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                "Gleam",
+                "/f",
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn set_windows_autostart(_enable: bool) -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn check_windows_autostart() -> bool {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    if let Ok(output) = Command::new("reg")
+        .args(&[
+            "query",
+            "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "/v",
+            "Gleam",
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+    {
+        return output.status.success();
+    }
+    false
+}
+
+#[cfg(not(target_os = "windows"))]
+fn check_windows_autostart() -> bool {
+    false
 }
 
 fn get_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -116,16 +189,21 @@ fn save_todos(app: AppHandle, todos: Vec<TodoItem>) -> Result<(), String> {
 #[tauri::command]
 fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
     let path = get_settings_file_path(&app)?;
-    if !path.exists() {
-        return Ok(AppSettings::default());
-    }
-    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let settings: AppSettings = serde_json::from_str(&data).unwrap_or_default();
+    let mut settings: AppSettings = if !path.exists() {
+        AppSettings::default()
+    } else {
+        let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&data).unwrap_or_default()
+    };
+    settings.launch_at_startup = check_windows_autostart();
     Ok(settings)
 }
 
 #[tauri::command]
-fn save_settings(app: AppHandle, state: tauri::State<AppState>, settings: AppSettings) -> Result<(), String> {
+fn save_settings(app: AppHandle, state: tauri::State<AppState>, mut settings: AppSettings) -> Result<(), String> {
+    let _ = set_windows_autostart(settings.launch_at_startup);
+    settings.launch_at_startup = check_windows_autostart();
+
     let path = get_settings_file_path(&app)?;
     let data = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     fs::write(&path, data).map_err(|e| e.to_string())?;
@@ -135,7 +213,14 @@ fn save_settings(app: AppHandle, state: tauri::State<AppState>, settings: AppSet
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.set_always_on_top(settings.always_on_top);
     }
+    let _ = update_tray_menu(app.clone(), settings.lang.clone());
     Ok(())
+}
+
+#[tauri::command]
+fn set_autostart(enable: bool) -> Result<bool, String> {
+    let _ = set_windows_autostart(enable);
+    Ok(check_windows_autostart())
 }
 
 /// Computes the exact work area on Windows (excluding the Windows taskbar)
@@ -204,8 +289,7 @@ fn toggle_drawer(app: AppHandle) -> Result<bool, String> {
     if let Some(win) = app.get_webview_window("main") {
         let is_visible = win.is_visible().unwrap_or(false);
         if is_visible {
-            let _ = win.hide();
-            let _ = app.emit("drawer-closed", ());
+            let _ = app.emit("request-close-drawer", ());
             return Ok(false);
         } else {
             let _ = dock_window_right(&win);
@@ -216,6 +300,29 @@ fn toggle_drawer(app: AppHandle) -> Result<bool, String> {
         }
     }
     Ok(false)
+}
+
+#[tauri::command]
+fn update_tray_menu(app: AppHandle, lang: String) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("main_tray") {
+        let is_fa = lang == "fa";
+        let toggle_text = if is_fa { "نمایش / بستن لیست کارها (Ctrl+Shift+Space)" } else { "Open / Close To-Do (Ctrl+Shift+Space)" };
+        let new_task_text = if is_fa { "افزودن سریع کار..." } else { "Quick Add Task..." };
+        let quit_text = if is_fa { "خروج از برنامه" } else { "Exit Gleam" };
+        let tooltip_text = if is_fa { "گلیم - برنامه‌ریز شیشه‌ای کارها" } else { "Gleam - Task Drawer" };
+
+        if let Ok(toggle_i) = MenuItem::with_id(&app, "toggle", toggle_text, true, None::<&str>) {
+            if let Ok(new_task_i) = MenuItem::with_id(&app, "new_task", new_task_text, true, None::<&str>) {
+                if let Ok(quit_i) = MenuItem::with_id(&app, "quit", quit_text, true, None::<&str>) {
+                    if let Ok(menu) = Menu::with_items(&app, &[&toggle_i, &new_task_i, &quit_i]) {
+                        let _ = tray.set_menu(Some(menu));
+                        let _ = tray.set_tooltip(Some(tooltip_text));
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -230,9 +337,11 @@ pub fn run() {
             save_todos,
             get_settings,
             save_settings,
+            set_autostart,
             show_drawer,
             hide_drawer,
-            toggle_drawer
+            toggle_drawer,
+            update_tray_menu
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -243,7 +352,7 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Exit Gleam", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&toggle_i, &new_task_i, &quit_i])?;
 
-            let tray = TrayIconBuilder::new()
+            let tray = TrayIconBuilder::with_id("main_tray")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(false)
@@ -315,15 +424,13 @@ pub fn run() {
                 let _ = dock_window_right(&win);
 
                 // Setup close-on-blur listener
-                let win_clone = win.clone();
                 let app_handle_for_focus = handle.clone();
                 win.on_window_event(move |event| {
                     if let tauri::WindowEvent::Focused(false) = event {
                         let state = app_handle_for_focus.state::<AppState>();
                         let close_on_blur = state.settings.lock().map(|s| s.close_on_blur).unwrap_or(false);
                         if close_on_blur {
-                            let _ = win_clone.hide();
-                            let _ = app_handle_for_focus.emit("drawer-closed", ());
+                            let _ = app_handle_for_focus.emit("request-close-drawer", ());
                         }
                     }
                 });

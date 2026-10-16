@@ -256,8 +256,8 @@
                 <span class="slider"></span>
               </label>
               <div class="setting-text">
-                <strong>بازخورد صوتی</strong>
-                <p>صدای ناقوس کریستالی هنگام تکمیل کارها</p>
+                <strong id="setting-title-sound">بازخورد صوتی</strong>
+                <p id="setting-desc-sound">صدای ناقوس کریستالی هنگام تکمیل کارها</p>
               </div>
             </div>
 
@@ -268,8 +268,8 @@
                 <span class="slider"></span>
               </label>
               <div class="setting-text">
-                <strong>همیشه جلو</strong>
-                <p>پنل کارها روی تمام پنجره‌های دیگر قرار بگیرد</p>
+                <strong id="setting-title-aot">همیشه جلو</strong>
+                <p id="setting-desc-aot">پنل کارها روی تمام پنجره‌های دیگر قرار بگیرد</p>
               </div>
             </div>
 
@@ -280,32 +280,44 @@
                 <span class="slider"></span>
               </label>
               <div class="setting-text">
-                <strong>پنهان شدن خودکار</strong>
-                <p>با کلیک خارج از پنل، فوراً پنهان شود</p>
+                <strong id="setting-title-cob">پنهان شدن خودکار</strong>
+                <p id="setting-desc-cob">با کلیک خارج از پنل، فوراً پنهان شود</p>
+              </div>
+            </div>
+
+            <!-- اجرای خودکار در استارتاپ ویندوز -->
+            <div class="setting-item">
+              <label class="switch">
+                <input type="checkbox" id="setting-autostart" />
+                <span class="slider"></span>
+              </label>
+              <div class="setting-text">
+                <strong id="setting-title-autostart">اجرا در استارتاپ ویندوز</strong>
+                <p id="setting-desc-autostart">اجرای خودکار نرم‌افزار هنگام روشن شدن سیستم</p>
               </div>
             </div>
 
             <!-- انتخاب تم -->
             <div class="setting-item theme-setting">
               <div class="setting-text">
-                <strong>پالت رنگی شیشه‌ای</strong>
-                <p>زیبایی‌شناسی شفاف و اختصاصی</p>
+                <strong id="setting-title-theme">پالت رنگی شیشه‌ای</strong>
+                <p id="setting-desc-theme">زیبایی‌شناسی شفاف و اختصاصی</p>
               </div>
               <div class="theme-picker">
-                <button type="button" class="theme-choice active" data-theme="theme-apple-frost" title="شیشه مات اپل (کنترل سنتر شفاف)">
-                  <span class="theme-preview apple-frost"></span> شیشه مات اپل
+                <button type="button" class="theme-choice active" data-theme="theme-apple-frost">
+                  <span class="theme-preview apple-frost"></span> <span class="theme-name">شیشه مات اپل</span>
                 </button>
-                <button type="button" class="theme-choice" data-theme="theme-obsidian" title="ابسیدین شبانه">
-                  <span class="theme-preview obsidian"></span> ابسیدین
+                <button type="button" class="theme-choice" data-theme="theme-obsidian">
+                  <span class="theme-preview obsidian"></span> <span class="theme-name">آبسیدین</span>
                 </button>
-                <button type="button" class="theme-choice" data-theme="theme-sapphire" title="یاقوت آبی عمیق">
-                  <span class="theme-preview sapphire"></span> یاقوت
+                <button type="button" class="theme-choice" data-theme="theme-sapphire">
+                  <span class="theme-preview sapphire"></span> <span class="theme-name">یاقوت</span>
                 </button>
-                <button type="button" class="theme-choice" data-theme="theme-aurora" title="شفق سایبری">
-                  <span class="theme-preview aurora"></span> شفق
+                <button type="button" class="theme-choice" data-theme="theme-aurora">
+                  <span class="theme-preview aurora"></span> <span class="theme-name">شفق</span>
                 </button>
-                <button type="button" class="theme-choice" data-theme="theme-emerald" title="زمرد یخ‌زده">
-                  <span class="theme-preview emerald"></span> زمرد
+                <button type="button" class="theme-choice" data-theme="theme-emerald">
+                  <span class="theme-preview emerald"></span> <span class="theme-name">زمرد</span>
                 </button>
               </div>
             </div>

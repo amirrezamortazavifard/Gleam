@@ -147,16 +147,19 @@ function toNumByLang(num) {
   return lang === "fa" ? toPersianNum(num) : String(num);
 }
 
-// فرهنگ لغت دوزبانه (فارسی / انگلیسی)
+// فرهنگ لغت دوزبانه کامل (۱۰۰٪ فارسی و ۱۰۰٪ انگلیسی)
 const I18N = {
   fa: {
-    appTitle: "گلس تودو",
+    appTitle: "Gleam (گلیم) - برنامه‌ریز شیشه‌ای کارها",
     brandPro: "PRO",
-    shortcutTitle: "کلید میانبر برای باز/بسته کردن",
-    settingsTitle: "تنظیمات",
-    closeTitle: "پنهان در سینی (Esc)",
-    calendarTitle: "تقویم (شمسی)",
-    langToggleTitle: "تغییر زبان به انگلیسی (Switch to English)",
+    shortcutTitle: "کلید میانبر سراسری برای باز و بسته کردن (Ctrl+Shift+Space)",
+    settingsTitle: "تنظیمات و ترجیحات",
+    closeTitle: "پنهان در سینی ویندوز (Esc)",
+    calendarTitle: "تقویم فارسی (شمسی)",
+    calendarAction: "تقویم ▾",
+    calendarBannerTitle: "کلیک برای باز کردن تقویم فارسی",
+    collapseFocusTitle: "جمع‌کردن / بازکردن کارت تمرکز",
+    langToggleTitle: "Switch to English (تغییر زبان به انگلیسی)",
     langIndicator: "EN",
     focusTitle: "تمرکز روزانه",
     statTotal: "کل",
@@ -172,16 +175,32 @@ const I18N = {
     categoryIdeas: "ایده‌ها",
     categoryDaily: "روزانه",
     categoryProjects: "پروژه‌ها",
+    categoryStudy: "مطالعه",
+    categoryHealth: "سلامتی",
     categoryAll: "همه",
+    categoryGeneral: "عمومی",
+    categoriesList: [
+      { value: "شخصی", label: "شخصی" },
+      { value: "کاری", label: "کاری" },
+      { value: "پروژه‌ها", label: "پروژه‌ها" },
+      { value: "مطالعه", label: "مطالعه" },
+      { value: "سلامتی", label: "سلامتی" },
+      { value: "ایده‌ها", label: "ایده‌ها" },
+      { value: "روزانه", label: "روزانه" }
+    ],
     dueLabel: "موعد",
+    duePickerTitle: "تعیین موعد مقرر در تقویم",
     filterAll: "همه",
     filterActive: "فعال",
     filterCompleted: "انجام‌شده",
     filterUrgent: "فوری",
     searchPlaceholder: "جستجو در کارها...",
     emptyTitle: "هیچ کاری پیدا نشد",
-    emptySubtitle: "همه کارها انجام شده! با Enter چیز جدیدی اضافه کن.",
+    emptySubtitle: "همه کارها انجام شده! با <kbd>Enter</kbd> چیز جدیدی اضافه کن.",
     clearCompleted: "پاک کردن انجام‌شده‌ها",
+    clearCompletedTitle: "حذف تمام کارهای انجام‌شده",
+    confirmClear: "آیا مطمئن هستید که می‌خواهید تمام کارهای انجام‌شده را پاک کنید؟",
+    confirmDelete: "آیا از حذف این کار اطمینان دارید؟",
     footerShowing: (shown, total) => `${toPersianNum(shown)} از ${toPersianNum(total)} کار نمایش داده شده`,
     mottoZero: "هنوز کاری نداری. امروز رو پربار کن!",
     mottoAllDone: "تمام کارها انجام شد! عالیه.",
@@ -203,6 +222,7 @@ const I18N = {
     editCancel: "انصراف",
     editDelete: "حذف کار",
     editSubtaskPlaceholder: "افزودن زیرکار جدید...",
+    editNotesPlaceholder: "توضیحات اختیاری...",
     editDueDisplayPlaceholder: "تعیین موعد در تقویم",
     settingsHeader: "تنظیمات و ترجیحات",
     settingSoundTitle: "بازخورد صوتی",
@@ -211,23 +231,44 @@ const I18N = {
     settingAotDesc: "پنل کارها روی تمام پنجره‌های دیگر قرار بگیرد",
     settingCobTitle: "پنهان شدن خودکار",
     settingCobDesc: "با کلیک خارج از پنل، فوراً پنهان شود",
+    settingAutostartTitle: "اجرا در استارتاپ ویندوز",
+    settingAutostartDesc: "اجرای خودکار نرم‌افزار هنگام روشن شدن سیستم",
     settingThemeTitle: "پالت رنگی شیشه‌ای",
     settingThemeDesc: "زیبایی‌شناسی شفاف و اختصاصی",
+    themeNames: {
+      "theme-apple-frost": "شیشه مات اپل",
+      "theme-obsidian": "آبسیدین",
+      "theme-sapphire": "یاقوت",
+      "theme-aurora": "شفق",
+      "theme-emerald": "زمرد"
+    },
     settingLangTitle: "زبان برنامه (Language)",
     settingLangDesc: "انتخاب بین زبان فارسی و انگلیسی",
     settingShortcutTitle: "کلید میانبر سراسری",
     settingShortcutDesc: "در هر برنامه‌ای پنل کارها را باز/بسته کنید",
     btnExport: "خروجی کارها (JSON)",
-    btnSample: "بارگذاری کارهای نمونه"
+    btnSample: "بارگذاری کارهای نمونه",
+    actionEdit: "ویرایش کامل",
+    actionDelete: "حذف",
+    actionSubtasks: "زیرکارها",
+    actionMarkActive: "علامت به عنوان فعال",
+    actionMarkDone: "تکمیل وظیفه",
+    calPrevMonth: "ماه قبل",
+    calNextMonth: "ماه بعد",
+    calClose: "بستن تقویم",
+    calPendingTasks: "دارای کارهای انجام‌نشده"
   },
   en: {
-    appTitle: "Gleam",
+    appTitle: "Gleam - Frosted Glass Task Drawer",
     brandPro: "PRO",
-    shortcutTitle: "Shortcut to toggle drawer",
-    settingsTitle: "Settings",
+    shortcutTitle: "Global shortcut to toggle drawer (Ctrl+Shift+Space)",
+    settingsTitle: "Settings & Preferences",
     closeTitle: "Hide to tray (Esc)",
     calendarTitle: "Calendar",
-    langToggleTitle: "تغییر زبان به فارسی (Switch to Persian)",
+    calendarAction: "Calendar ▾",
+    calendarBannerTitle: "Click to open calendar",
+    collapseFocusTitle: "Collapse / expand focus card",
+    langToggleTitle: "Switch to Persian (تغییر زبان به فارسی)",
     langIndicator: "FA",
     focusTitle: "Daily Focus",
     statTotal: "Total",
@@ -243,16 +284,32 @@ const I18N = {
     categoryIdeas: "Ideas",
     categoryDaily: "Daily",
     categoryProjects: "Projects",
+    categoryStudy: "Study",
+    categoryHealth: "Health",
     categoryAll: "All",
+    categoryGeneral: "General",
+    categoriesList: [
+      { value: "Personal", label: "Personal" },
+      { value: "Work", label: "Work" },
+      { value: "Projects", label: "Projects" },
+      { value: "Study", label: "Study" },
+      { value: "Health", label: "Health" },
+      { value: "Ideas", label: "Ideas" },
+      { value: "Daily", label: "Daily" }
+    ],
     dueLabel: "Due Date",
+    duePickerTitle: "Pick due date in calendar",
     filterAll: "All",
     filterActive: "Active",
     filterCompleted: "Done",
     filterUrgent: "Urgent",
     searchPlaceholder: "Search tasks...",
     emptyTitle: "No tasks found",
-    emptySubtitle: "All caught up! Press Enter to add something new.",
+    emptySubtitle: "All caught up! Press <kbd>Enter</kbd> to add something new.",
     clearCompleted: "Clear Completed",
+    clearCompletedTitle: "Delete all completed tasks",
+    confirmClear: "Are you sure you want to clear all completed tasks?",
+    confirmDelete: "Are you sure you want to delete this task?",
     footerShowing: (shown, total) => `Showing ${shown} of ${total} tasks`,
     mottoZero: "No tasks yet. Make today productive!",
     mottoAllDone: "All done for today! Fantastic job.",
@@ -274,6 +331,7 @@ const I18N = {
     editCancel: "Cancel",
     editDelete: "Delete Task",
     editSubtaskPlaceholder: "Add a subtask...",
+    editNotesPlaceholder: "Optional notes...",
     editDueDisplayPlaceholder: "Pick due date in calendar",
     settingsHeader: "Settings & Preferences",
     settingSoundTitle: "Audio Feedback",
@@ -282,14 +340,32 @@ const I18N = {
     settingAotDesc: "Keep task panel above all other windows",
     settingCobTitle: "Auto-hide on Blur",
     settingCobDesc: "Hide drawer when clicking outside panel",
+    settingAutostartTitle: "Launch on Startup",
+    settingAutostartDesc: "Start Gleam automatically when Windows boots",
     settingThemeTitle: "Glass Palette",
     settingThemeDesc: "Translucent glass aesthetics",
+    themeNames: {
+      "theme-apple-frost": "Apple Frost",
+      "theme-obsidian": "Obsidian",
+      "theme-sapphire": "Sapphire",
+      "theme-aurora": "Aurora",
+      "theme-emerald": "Emerald"
+    },
     settingLangTitle: "Language",
     settingLangDesc: "Choose between Persian and English",
     settingShortcutTitle: "Global Shortcut",
     settingShortcutDesc: "Open/close task drawer anywhere",
     btnExport: "Export Tasks (JSON)",
-    btnSample: "Load Sample Tasks"
+    btnSample: "Load Sample Tasks",
+    actionEdit: "Edit Task",
+    actionDelete: "Delete",
+    actionSubtasks: "Subtasks",
+    actionMarkActive: "Mark as active",
+    actionMarkDone: "Mark as completed",
+    calPrevMonth: "Previous Month",
+    calNextMonth: "Next Month",
+    calClose: "Close Calendar",
+    calPendingTasks: "Has pending tasks"
   }
 };
 
@@ -299,6 +375,7 @@ let settings = {
   sound_enabled: true,
   always_on_top: true,
   close_on_blur: false,
+  launch_at_startup: false,
   shortcut: "CommandOrControl+Shift+Space",
   theme: "theme-apple-frost",
   lang: "fa"
@@ -452,9 +529,15 @@ function initElements() {
   el.settingSound = document.getElementById("setting-sound");
   el.settingAlwaysOnTop = document.getElementById("setting-always-on-top");
   el.settingCloseOnBlur = document.getElementById("setting-close-on-blur");
+  el.settingAutostart = document.getElementById("setting-autostart");
   el.themeChoices = document.querySelectorAll(".theme-choice");
   el.btnExportData = document.getElementById("btn-export-data");
   el.btnSampleData = document.getElementById("btn-sample-data");
+
+  // Header extras & Date banner
+  el.shortcutPill = document.querySelector(".shortcut-pill");
+  el.btnToggleFocus = document.getElementById("btn-toggle-focus-card");
+  el.bannerCalendarChip = document.querySelector(".calendar-chip-action");
 
   // Language Elements
   el.btnLangToggle = document.getElementById("btn-lang-toggle");
@@ -591,6 +674,8 @@ async function persistSettings() {
 
 // Window Management
 async function closeDrawer() {
+  if (el.drawer.classList.contains("closing")) return;
+  el.drawer.classList.remove("opening");
   el.drawer.classList.add("closing");
   setTimeout(async () => {
     try {
@@ -599,7 +684,7 @@ async function closeDrawer() {
       console.error(e);
     }
     el.drawer.classList.remove("closing");
-  }, 260);
+  }, 220);
 }
 
 // Rendering Logic
@@ -1048,9 +1133,10 @@ async function addTodoFromInput() {
 }
 
 function renderSettings() {
-  el.settingSound.checked = settings.sound_enabled;
-  el.settingAlwaysOnTop.checked = settings.always_on_top;
-  el.settingCloseOnBlur.checked = settings.close_on_blur;
+  if (el.settingSound) el.settingSound.checked = settings.sound_enabled;
+  if (el.settingAlwaysOnTop) el.settingAlwaysOnTop.checked = settings.always_on_top;
+  if (el.settingCloseOnBlur) el.settingCloseOnBlur.checked = settings.close_on_blur;
+  if (el.settingAutostart) el.settingAutostart.checked = !!settings.launch_at_startup;
 
   // Apply theme
   document.body.className = settings.theme || "theme-apple-frost";
@@ -1223,14 +1309,21 @@ function applyLanguage(lang) {
   // تنظیم خصوصیات ریشه HTML و جهت نوشتاری RTL/LTR
   document.documentElement.lang = lang;
   document.documentElement.dir = (lang === "fa") ? "rtl" : "ltr";
+  document.title = t.appTitle;
 
   // دکمه تغییر سریع زبان در هدر
-  if (el.langIndicator) {
-    el.langIndicator.textContent = t.langIndicator;
-  }
-  if (el.btnLangToggle) {
-    el.btnLangToggle.title = t.langToggleTitle;
-  }
+  if (el.langIndicator) el.langIndicator.textContent = t.langIndicator;
+  if (el.btnLangToggle) el.btnLangToggle.title = t.langToggleTitle;
+  if (el.btnOpenCalendar) el.btnOpenCalendar.title = t.calendarTitle;
+  if (el.btnSettings) el.btnSettings.title = t.settingsTitle;
+  if (el.btnClose) el.btnClose.title = t.closeTitle;
+  if (el.shortcutPill) el.shortcutPill.title = t.shortcutTitle;
+  if (el.btnToggleFocus) el.btnToggleFocus.title = t.collapseFocusTitle;
+
+  // نوار تاریخ بالای پنل
+  if (el.persianDateBanner) el.persianDateBanner.title = t.calendarBannerTitle;
+  if (el.bannerCalendarChip) el.bannerCalendarChip.textContent = t.calendarAction;
+  if (el.currentPersianDate) el.currentPersianDate.textContent = formatFullDateByLang(new Date());
 
   // دکمه‌های انتخابگر زبان در مودال تنظیمات
   if (el.langChoices) {
@@ -1238,11 +1331,6 @@ function applyLanguage(lang) {
       btn.classList.toggle("active", btn.dataset.lang === lang);
     });
   }
-
-  // هدر و دکمه‌ها
-  if (el.btnOpenCalendar) el.btnOpenCalendar.title = t.calendarTitle;
-  if (el.btnSettings) el.btnSettings.title = t.settingsTitle;
-  if (el.btnClose) el.btnClose.title = t.closeTitle;
 
   // کارت پیشرفت
   const progressTitleEl = document.querySelector(".progress-title");
@@ -1260,15 +1348,30 @@ function applyLanguage(lang) {
 
   // چیپ‌های اولویت در فرم افزودن
   const chipHigh = document.querySelector('.priority-chip[data-priority="high"]');
-  if (chipHigh) chipHigh.innerHTML = `<span class="priority-indicator high"></span> ${t.priorityHigh}`;
+  if (chipHigh) {
+    chipHigh.innerHTML = `<span class="priority-indicator high"></span> ${t.priorityHigh}`;
+    chipHigh.title = `${t.editLabelPriority}: ${t.priorityHigh}`;
+  }
   const chipMed = document.querySelector('.priority-chip[data-priority="medium"]');
-  if (chipMed) chipMed.innerHTML = `<span class="priority-indicator med"></span> ${t.priorityMed}`;
+  if (chipMed) {
+    chipMed.innerHTML = `<span class="priority-indicator med"></span> ${t.priorityMed}`;
+    chipMed.title = `${t.editLabelPriority}: ${t.priorityMed}`;
+  }
   const chipLow = document.querySelector('.priority-chip[data-priority="low"]');
-  if (chipLow) chipLow.innerHTML = `<span class="priority-indicator low"></span> ${t.priorityLow}`;
+  if (chipLow) {
+    chipLow.innerHTML = `<span class="priority-indicator low"></span> ${t.priorityLow}`;
+    chipLow.title = `${t.editLabelPriority}: ${t.priorityLow}`;
+  }
 
   if (!selectedDueDate && el.dueLabel) {
     el.dueLabel.textContent = t.dueLabel;
   }
+  if (el.btnDueToggle) {
+    el.btnDueToggle.title = t.duePickerTitle;
+  }
+
+  // به‌روزرسانی منوهای آبشاری دسته‌بندی
+  updateCategoryDropdowns(lang);
 
   // تب‌های فیلتر
   const tabAll = document.querySelector('.filter-tab[data-filter="all"]');
@@ -1290,7 +1393,10 @@ function applyLanguage(lang) {
   if (emptyP) emptyP.innerHTML = t.emptySubtitle;
 
   // پاورقی
-  if (el.btnClearCompleted) el.btnClearCompleted.textContent = t.clearCompleted;
+  if (el.btnClearCompleted) {
+    el.btnClearCompleted.textContent = t.clearCompleted;
+    el.btnClearCompleted.title = t.clearCompletedTitle;
+  }
 
   // مودال ویرایش کار
   const editModalTitle = document.getElementById("edit-modal-title");
@@ -1317,6 +1423,8 @@ function applyLanguage(lang) {
   if (el.btnEditCancel) el.btnEditCancel.textContent = t.editCancel;
   if (el.btnEditDelete) el.btnEditDelete.textContent = t.editDelete;
   if (el.editSubtaskInput) el.editSubtaskInput.placeholder = t.editSubtaskPlaceholder;
+  if (el.editTaskNotesInput) el.editTaskNotesInput.placeholder = t.editNotesPlaceholder;
+  if (el.btnCloseEdit) el.btnCloseEdit.title = t.closeTitle;
 
   // تقویم و گزینه‌های سریع
   if (el.calBtnToday) el.calBtnToday.textContent = t.today;
@@ -1324,18 +1432,96 @@ function applyLanguage(lang) {
   if (el.calChipTomorrow) el.calChipTomorrow.textContent = t.tomorrow;
   if (el.calChipNextSat) el.calChipNextSat.textContent = t.nextSaturday;
   if (el.calChipClear) el.calChipClear.textContent = t.noDue;
+  if (el.calPrevMonth) el.calPrevMonth.title = t.calPrevMonth;
+  if (el.calNextMonth) el.calNextMonth.title = t.calNextMonth;
+  if (el.btnCloseCalendar) el.btnCloseCalendar.title = t.calClose;
 
   // مودال تنظیمات
   const settingsModalH3 = document.querySelector("#settings-modal .modal-header h3");
   if (settingsModalH3) settingsModalH3.textContent = t.settingsHeader;
+  const settingTitleSound = document.getElementById("setting-title-sound");
+  if (settingTitleSound) settingTitleSound.textContent = t.settingSoundTitle;
+  const settingDescSound = document.getElementById("setting-desc-sound");
+  if (settingDescSound) settingDescSound.textContent = t.settingSoundDesc;
+
+  const settingTitleAot = document.getElementById("setting-title-aot");
+  if (settingTitleAot) settingTitleAot.textContent = t.settingAotTitle;
+  const settingDescAot = document.getElementById("setting-desc-aot");
+  if (settingDescAot) settingDescAot.textContent = t.settingAotDesc;
+
+  const settingTitleCob = document.getElementById("setting-title-cob");
+  if (settingTitleCob) settingTitleCob.textContent = t.settingCobTitle;
+  const settingDescCob = document.getElementById("setting-desc-cob");
+  if (settingDescCob) settingDescCob.textContent = t.settingCobDesc;
+
+  const settingTitleAutostart = document.getElementById("setting-title-autostart");
+  if (settingTitleAutostart) settingTitleAutostart.textContent = t.settingAutostartTitle;
+  const settingDescAutostart = document.getElementById("setting-desc-autostart");
+  if (settingDescAutostart) settingDescAutostart.textContent = t.settingAutostartDesc;
+
+  const settingTitleTheme = document.getElementById("setting-title-theme");
+  if (settingTitleTheme) settingTitleTheme.textContent = t.settingThemeTitle;
+  const settingDescTheme = document.getElementById("setting-desc-theme");
+  if (settingDescTheme) settingDescTheme.textContent = t.settingThemeDesc;
+
+  // اسامی تم‌ها در پنل انتخاب
+  el.themeChoices.forEach((btn) => {
+    const themeKey = btn.dataset.theme;
+    const nameSpan = btn.querySelector(".theme-name");
+    if (nameSpan && t.themeNames && t.themeNames[themeKey]) {
+      nameSpan.textContent = t.themeNames[themeKey];
+    }
+  });
+
   const settingTitleLang = document.getElementById("setting-title-lang");
   if (settingTitleLang) settingTitleLang.textContent = t.settingLangTitle;
   const settingDescLang = document.getElementById("setting-desc-lang");
   if (settingDescLang) settingDescLang.textContent = t.settingLangDesc;
+
+  const settingTitleShortcut = document.getElementById("setting-title-shortcut");
+  if (settingTitleShortcut) settingTitleShortcut.textContent = t.settingShortcutTitle;
+  const settingDescShortcut = document.getElementById("setting-desc-shortcut");
+  if (settingDescShortcut) settingDescShortcut.textContent = t.settingShortcutDesc;
+
   if (el.btnExportData) el.btnExportData.textContent = t.btnExport;
   if (el.btnSampleData) el.btnSampleData.textContent = t.btnSample;
+  if (el.btnCloseSettings) el.btnCloseSettings.title = t.closeTitle;
+
+  // به‌روزرسانی منوی سیستم تری در Rust
+  try {
+    invoke("update_tray_menu", { lang });
+  } catch (_) {}
 
   render();
+}
+
+function updateCategoryDropdowns(lang) {
+  const t = I18N[lang] || I18N.fa;
+  const list = t.categoriesList || [];
+
+  if (el.selectCategory) {
+    const curVal = el.selectCategory.value;
+    el.selectCategory.innerHTML = "";
+    list.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.value;
+      opt.textContent = c.label;
+      el.selectCategory.appendChild(opt);
+    });
+    if (curVal) el.selectCategory.value = curVal;
+  }
+
+  if (el.editTaskCategorySelect) {
+    const curVal = el.editTaskCategorySelect.value;
+    el.editTaskCategorySelect.innerHTML = "";
+    list.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.value;
+      opt.textContent = c.label;
+      el.editTaskCategorySelect.appendChild(opt);
+    });
+    if (curVal) el.editTaskCategorySelect.value = curVal;
+  }
 }
 
 // Event Listeners Setup
@@ -1491,6 +1677,18 @@ function setupListeners() {
     settings.close_on_blur = e.target.checked;
     await persistSettings();
   });
+  if (el.settingAutostart) {
+    el.settingAutostart.addEventListener("change", async (e) => {
+      const enabled = e.target.checked;
+      settings.launch_at_startup = enabled;
+      try {
+        await invoke("set_autostart", { enabled });
+      } catch (err) {
+        console.error("Failed to set autostart:", err);
+      }
+      await persistSettings();
+    });
+  }
 
   // Theme selection
   el.themeChoices.forEach((btn) => {
@@ -1728,9 +1926,16 @@ function setupListeners() {
     listen("drawer-opened", () => {
       // Re-trigger slide-in animation cleanly
       el.drawer.classList.remove("closing");
+      el.drawer.classList.remove("opening");
+      void el.drawer.offsetWidth;
+      el.drawer.classList.add("opening");
       if (el.inputTitle) {
         setTimeout(() => el.inputTitle.focus(), 120);
       }
+    });
+
+    listen("request-close-drawer", () => {
+      closeDrawer();
     });
   }
 }

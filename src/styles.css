@@ -319,32 +319,37 @@ button {
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border-left: 1px solid var(--border-glass);
   box-shadow: var(--shadow-drawer), inset 1px 0 0 rgba(255, 255, 255, 0.08);
-  transition: transform var(--transition-smooth), opacity var(--transition-smooth);
-  animation: slideInDrawer 0.30s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.drawer-container.opening {
+  animation: slideInDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .drawer-container.closing {
-  animation: slideOutDrawer 0.24s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutDrawer 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  pointer-events: none;
 }
 
 @keyframes slideInDrawer {
-  from {
+  0% {
     transform: translateX(100%);
-    opacity: 0.65;
+    opacity: 0;
   }
-  to {
+  100% {
     transform: translateX(0);
     opacity: 1;
   }
 }
 
 @keyframes slideOutDrawer {
-  from {
+  0% {
     transform: translateX(0);
     opacity: 1;
   }
-  to {
+  100% {
     transform: translateX(100%);
     opacity: 0;
   }
