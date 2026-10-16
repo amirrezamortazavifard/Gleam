@@ -751,16 +751,31 @@ function createTaskCard(task) {
     </span>`;
   }
 
+  // نشانگر اولویت با متن و نشانگر برای دسترس‌پذیری WCAG
+  let prioLabel = lang === "fa" ? "متوسط" : "Medium";
+  let prioClass = "med";
+  if (task.priority === "high") {
+    prioLabel = lang === "fa" ? "فوری" : "Urgent";
+    prioClass = "high";
+  } else if (task.priority === "low") {
+    prioLabel = lang === "fa" ? "پایین" : "Low";
+    prioClass = "low";
+  }
+  const prioBadge = `<span class="task-tag priority-badge ${prioClass}">
+    <span class="priority-indicator ${prioClass}"></span>
+    ${prioLabel}
+  </span>`;
+
   // پیشرفت زیرتسک‌ها
   const totalSubtasks = (task.subtasks || []).length;
   const completedSubtasks = (task.subtasks || []).filter((s) => s.completed).length;
   const subtasksBadge = totalSubtasks > 0 
-    ? `<span class="task-tag">${t.subtasksCount(completedSubtasks, totalSubtasks)}</span>` 
+    ? `<span class="task-tag subtasks-chip">${t.subtasksCount(completedSubtasks, totalSubtasks)}</span>` 
     : "";
 
   card.innerHTML = `
     <div class="task-card-main">
-      <div class="task-checkbox-wrapper" data-action="toggle">
+      <div class="task-checkbox-wrapper" data-action="toggle" role="checkbox" aria-checked="${task.completed}" tabindex="0" title="${task.completed ? (lang === 'fa' ? 'علامت به عنوان فعال' : 'Mark as active') : (lang === 'fa' ? 'تکمیل وظیفه' : 'Mark as completed')}">
         <div class="task-checkbox-custom">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
@@ -771,19 +786,20 @@ function createTaskCard(task) {
         <div class="task-title-row">
           <span class="task-title" dir="auto">${escapeHtml(task.title)}</span>
           <div class="task-actions">
-            <button class="task-action-btn" data-action="subtasks" title="${lang === 'fa' ? 'زیرکارها' : 'Subtasks'}">
+            <button class="task-action-btn" data-action="subtasks" title="${lang === 'fa' ? 'زیرکارها' : 'Subtasks'}" aria-label="زیرکارها">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
             </button>
-            <button class="task-action-btn" data-action="edit" title="${lang === 'fa' ? 'ویرایش کامل' : 'Edit Task'}">
+            <button class="task-action-btn" data-action="edit" title="${lang === 'fa' ? 'ویرایش کامل' : 'Edit Task'}" aria-label="ویرایش">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
             </button>
-            <button class="task-action-btn delete-btn" data-action="delete" title="${lang === 'fa' ? 'حذف' : 'Delete'}">
+            <button class="task-action-btn delete-btn" data-action="delete" title="${lang === 'fa' ? 'حذف' : 'Delete'}" aria-label="حذف">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>
         </div>
         <div class="task-badges">
-          <span class="task-tag">${escapeHtml(task.category || (lang === "fa" ? "عمومی" : "General"))}</span>
+          ${prioBadge}
+          <span class="task-tag category-badge">${escapeHtml(task.category || (lang === "fa" ? "عمومی" : "General"))}</span>
           ${dueHtml}
           ${subtasksBadge}
         </div>
@@ -1661,11 +1677,31 @@ function setupListeners() {
     render();
   });
 
-  // Clear completed
+  // Toggle Collapsible Focus Card
+  const btnToggleFocus = document.getElementById("btn-toggle-focus-card");
+  const progressCard = document.getElementById("progress-card");
+  if (btnToggleFocus && progressCard) {
+    const isCollapsed = localStorage.getItem("gleam_focus_collapsed") === "true";
+    if (isCollapsed) progressCard.classList.add("collapsed");
+
+    btnToggleFocus.addEventListener("click", () => {
+      progressCard.classList.toggle("collapsed");
+      localStorage.setItem("gleam_focus_collapsed", progressCard.classList.contains("collapsed"));
+    });
+  }
+
+  // Clear completed with confirmation
   el.btnClearCompleted.addEventListener("click", async () => {
-    const prevCount = todos.length;
-    todos = todos.filter((t) => !t.completed);
-    if (todos.length !== prevCount) {
+    const completedCount = todos.filter((t) => t.completed).length;
+    if (completedCount === 0) return;
+
+    const lang = settings.lang || "fa";
+    const confirmMsg = lang === "fa"
+      ? `آیا از حذف ${toPersianNum(completedCount)} کار انجام‌شده اطمینان دارید؟`
+      : `Are you sure you want to clear ${completedCount} completed tasks?`;
+
+    if (window.confirm(confirmMsg)) {
+      todos = todos.filter((t) => !t.completed);
       playSound("delete");
       await persistTodos();
       render();

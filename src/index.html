@@ -33,7 +33,7 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-lang-toggle" class="glass-btn lang-btn" title="تغییر زبان / Switch Language">
+          <button id="btn-lang-toggle" class="glass-btn lang-btn" title="تغییر زبان / Switch Language" aria-label="تغییر زبان">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -41,7 +41,7 @@
             </svg>
             <span id="lang-indicator">EN</span>
           </button>
-          <button id="btn-open-calendar" class="glass-btn icon-btn" title="تقویم فارسی (شمسی)">
+          <button id="btn-open-calendar" class="glass-btn icon-btn" title="تقویم فارسی (شمسی)" aria-label="تقویم شمسی">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -49,16 +49,16 @@
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </button>
-          <div class="shortcut-pill" title="کلید میانبر برای باز/بسته کردن">
+          <div class="shortcut-pill" title="کلید میانبر سراسری برای باز و بسته کردن">
             <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>Space</kbd>
           </div>
-          <button id="btn-settings" class="glass-btn icon-btn" title="تنظیمات">
+          <button id="btn-settings" class="glass-btn icon-btn" title="تنظیمات" aria-label="تنظیمات برنامه">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
-          <button id="btn-close" class="glass-btn icon-btn close-btn" title="پنهان در سینی (Esc)">
+          <button id="btn-close" class="glass-btn icon-btn close-btn" title="پنهان در سینی ویندوز (Esc)" aria-label="بستن پنجره">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -68,10 +68,10 @@
       </header>
 
       <!-- نوار تاریخ روز تقویم فارسی -->
-      <div id="persian-date-banner" class="persian-date-banner glass-interactive" title="کلیک برای باز کردن تقویم فارسی">
+      <div id="persian-date-banner" class="persian-date-banner glass-interactive" role="button" tabindex="0" title="کلیک برای باز کردن تقویم فارسی">
         <div class="date-banner-left">
           <div class="calendar-pill-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
               <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -83,15 +83,15 @@
         <span class="calendar-chip-action">تقویم ▾</span>
       </div>
 
-      <!-- کارت پیشرفت و بهره‌وری -->
-      <section class="glass-card progress-card">
+      <!-- کارت پیشرفت و بهره‌وری (دارای قابلیت جمع‌شدن) -->
+      <section id="progress-card" class="glass-card progress-card" aria-label="خلاصه پیشرفت روزانه">
         <div class="progress-ring-container">
-          <svg class="progress-ring" width="68" height="68">
+          <svg class="progress-ring" width="62" height="62" viewBox="0 0 68 68">
             <circle class="ring-bg" stroke-width="6" fill="transparent" r="28" cx="34" cy="34" />
             <circle id="ring-progress" class="ring-fg" stroke-width="6" stroke-linecap="round" fill="transparent" r="28" cx="34" cy="34" />
           </svg>
           <div class="ring-center-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
@@ -99,8 +99,15 @@
         </div>
         <div class="progress-info">
           <div class="progress-title-row">
-            <span class="progress-title">تمرکز روزانه</span>
-            <span id="progress-percent" class="progress-badge">۰٪</span>
+            <div class="progress-title-meta">
+              <span class="progress-title">تمرکز روزانه</span>
+              <span id="progress-percent" class="progress-badge">۰٪</span>
+            </div>
+            <button type="button" id="btn-toggle-focus-card" class="collapse-toggle-btn" title="جمع‌کردن / بازکردن کارت تمرکز" aria-label="تغییر وضعیت کارت تمرکز">
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
           </div>
           <p id="progress-motto" class="progress-motto">هنوز کاری نداری. امروز رو پربار کن!</p>
           <div class="stats-pills">
@@ -111,11 +118,12 @@
         </div>
       </section>
 
-      <!-- بخش افزودن سریع -->
-      <section class="add-section glass-card">
+      <!-- بخش افزودن سریع (Primary Action) -->
+      <section class="add-section glass-card" aria-label="افزودن کار جدید">
         <form id="add-todo-form" class="add-form">
+          <label for="new-todo-title" class="sr-only">عنوان وظیفه جدید</label>
           <div class="input-glow-wrapper">
-            <button type="submit" id="btn-add-submit" class="submit-btn" title="افزودن کار (Enter)">
+            <button type="submit" id="btn-add-submit" class="submit-btn" title="افزودن کار (Enter)" aria-label="ثبت کار">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -128,6 +136,7 @@
               placeholder="کار یا ایده جدید اضافه کن... (Enter ↵)" 
               autocomplete="off"
               dir="auto"
+              required
             />
           </div>
 
