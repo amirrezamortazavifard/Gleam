@@ -12,19 +12,29 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20Acrylic%20%26%20Mica-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows Acrylic">
   <img src="https://img.shields.io/badge/UI-Frosted%20Glassmorphism-38BDF8?style=flat-square" alt="Glassmorphism">
   <img src="https://img.shields.io/badge/i18n-English%20%7C%20Persian%20(RTL)-10B981?style=flat-square" alt="i18n Support">
+  <a href="https://github.com/amirrezamortazavifard/Gleam/releases/latest"><img src="https://img.shields.io/github/v/release/amirrezamortazavifard/Gleam?style=flat-square&color=6366F1&logo=github&logoColor=white" alt="Latest Release"></a>
+  <a href="https://github.com/amirrezamortazavifard/Gleam/stargazers"><img src="https://img.shields.io/github/stars/amirrezamortazavifard/Gleam?style=flat-square&color=F59E0B&logo=apachespark&logoColor=white" alt="GitHub Stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/amirrezamortazavifard/Gleam/releases/latest">
+    <img src="https://img.shields.io/badge/⚡%20Download%20Latest%20Release-Windows%20Installer%20(.exe)-6366F1?style=for-the-badge&logo=windows&logoColor=white" alt="Download Gleam for Windows">
+  </a>
 </p>
 
 ---
 
 <p align="center">
   <a href="#-about-gleam">About</a> •
+  <a href="#-live-demonstration">Live Demo</a> •
   <a href="#-key-features">Key Features</a> •
   <a href="#-interface-preview">Preview</a> •
   <a href="#-keyboard-shortcuts">Shortcuts</a> •
   <a href="#-color-themes">Themes</a> •
   <a href="#-technical-architecture">Architecture</a> •
   <a href="#-getting-started">Getting Started</a> •
+  <a href="#-stargazers-over-time">Stars</a> •
   <a href="#-license">License</a>
 </p>
 
@@ -35,6 +45,16 @@
 **Gleam** is a desktop productivity drawer designed to eliminate window clutter and bring instant task capture to your fingertips. Unlike traditional task managers that consume taskbar real estate and require bulky application windows, **Gleam** resides silently in the Windows System Tray and glides into view with a single global hotkey (**`Ctrl + Shift + Space`**).
 
 Drawing inspiration from **Apple Control Center** and **Windows Acrylic/Mica**, Gleam wraps high-performance native Rust APIs in a liquid frosted-glass aesthetic. It delivers instant responsiveness, crystal chimes, dual-calendar scheduling, and comprehensive task management in a featherweight footprint.
+
+---
+
+## 🎬 Live Demonstration
+
+<p align="center">
+  <img src="assets/Demo.gif" alt="Gleam Live Desktop Workflow & Glassmorphism Demo" width="95%" style="border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.6);">
+</p>
+
+*Watch Gleam slide in from the screen edge with zero taskbar intrusion, smooth frosted glass refractions, and instant task completion feedback.*
 
 ---
 
@@ -181,6 +201,12 @@ The compiled binary will be generated at:
 ```text
 src-tauri/target/release/Gleam.exe
 ```
+
+---
+
+## ⭐ Stargazers Over Time
+
+[![Star History Chart](https://api.star-history.com/svg?repos=amirrezamortazavifard/Gleam&type=Date)](https://star-history.com/#amirrezamortazavifard/Gleam&Date)
 
 ---
 
