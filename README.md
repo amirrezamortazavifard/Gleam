@@ -61,7 +61,13 @@ Drawing inspiration from **Apple Control Center** and **Windows Acrylic/Mica**, 
 ## 🖼 Interface Preview
 
 <p align="center">
-  <img src="assets/dashboard.png" alt="Gleam Dashboard Preview" width="92%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+  <img src="assets/dashboard.png" alt="Gleam English Interface (LTR)" width="48%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); vertical-align: top;">
+  &nbsp;
+  <img src="assets/dashboard-fa.png" alt="Gleam Persian Interface (RTL)" width="48%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); vertical-align: top;">
+</p>
+
+<p align="center">
+  <em>Left: English (LTR) mode with Gregorian calendar &bull; Right: Persian (RTL) mode with Solar Hijri (Jalali) calendar</em>
 </p>
 
 ---
