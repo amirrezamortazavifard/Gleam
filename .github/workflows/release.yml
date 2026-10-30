@@ -46,15 +46,12 @@ jobs:
           releaseBody: |
             ## ✨ Gleam ${{ github.ref_name }} — Modern Frosted Glass Task Drawer
 
-            ### 🚀 What's New in v1.0.2:
-            - **Resilient Data Persistence & Atomic Saves:** Zero data loss on reboot or sudden shutdown using atomic file writes (`.tmp` write and `.bak` safety redundancy).
-            - **Self-Healing Deserialization & Backup Recovery:** Automatic fallback to backup storage and corrupted file quarantine to protect user data from unexpected serde errors.
-            - **Dual-Layer Cache Architecture:** Added instant reactivity and synchronous protection using synchronized localStorage caching alongside native OS AppData storage.
-            - **Bilingual Calendar Parity:** True Gregorian calendar rendering in English mode and Jalali calendar in Persian mode with accurate month/day localization.
-            - **Category Filter Synchronization:** Canonical category mapping preventing task disappearance when switching between English and Persian or applying category filters.
-            - **Task Notes Preview Snippet:** Translucent inline preview of task notes directly on task cards.
-            - **Subtask Accordion State Retention:** Preserved open/collapsed state of subtasks across card re-renders.
-            - **Dynamic RTL/LTR Form Parity:** Polished text alignment for clean bilingual form inputs and cards.
+            ### 🚀 What's New in v1.0.3:
+            - **Telegram-Style In-App Auto-Updater:** Download and install updates completely in-app with zero manual downloads or browser visits.
+            - **Real-Time Streaming Progress Bar:** Frosted glass progress indicator with live percentage and MB counters in both the top banner and settings panel.
+            - **Silent NSIS Installation & Auto-Restart:** Headless `/S` background installer execution with seamless restart into the updated version.
+            - **Multi-Source Binary Detection:** Automatically picks up the newest official Windows NSIS setup package from GitHub Releases.
+            - **Bilingual Update Status:** Complete Persian and English status messages and notifications.
 
             ### 📦 Downloads:
             Download the Windows setup installer (`.exe`) or Windows Installer (`.msi`) below.

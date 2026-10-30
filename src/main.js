@@ -1619,7 +1619,7 @@ function applySelectedDate(isoDate) {
 // ==========================================================================
 // سیستم بررسی و اعلان نسخه جدید (GitHub Releases Auto-Updater)
 // ==========================================================================
-const CURRENT_APP_VERSION = "1.0.2";
+const CURRENT_APP_VERSION = "1.0.3";
 const GITHUB_REPO = "amirrezamortazavifard/Gleam";
 const GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/amirrezamortazavifard/Gleam/releases/latest";
 const GITHUB_RELEASES_PAGE = "https://github.com/amirrezamortazavifard/Gleam/releases";
