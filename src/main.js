@@ -263,7 +263,7 @@ const I18N = {
     calPendingTasks: "دارای کارهای انجام‌نشده",
     updateBannerTitle: "نسخه جدید منتشر شد!",
     updateBannerDesc: "به‌روزرسانی با قابلیت‌ها و پایداری بیشتر در گیت‌هاب در دسترس است.",
-    updateBtnDownload: "دانلود",
+    updateBtnDownload: "به‌روزرسانی خودکار",
     updateBtnDismiss: "بستن",
     settingUpdateTitle: "به‌روزرسانی نرم‌افزار",
     settingUpdateDesc: "بررسی انتشار آخرین نسخه از گیت‌هاب",
@@ -272,8 +272,13 @@ const I18N = {
     updateUpToDate: "شما از آخرین نسخه نرم‌افزار استفاده می‌کنید.",
     updateAvailable: (ver) => `نسخه جدید ${ver} آماده دریافت است!`,
     updateError: "خطا در اتصال به گیت‌هاب. وضعیت اینترنت را بررسی کنید.",
-    btnDownloadUpdate: "دانلود نسخه جدید",
-    btnViewReleases: "مشاهده در گیت‌هاب"
+    btnDownloadUpdate: "به‌روزرسانی خودکار",
+    btnViewReleases: "مشاهده در گیت‌هاب",
+    updateDownloading: "در حال دریافت فایل نصبی...",
+    updateReadyToInstall: "دانلود کامل شد! آماده نصب.",
+    updateInstalling: "در حال نصب و راه‌اندازی مجدد...",
+    updateRestartBtn: "نصب و راه‌اندازی مجدد",
+    updateFailed: "خطا در دانلود یا نصب به‌روزرسانی"
   },
   en: {
     appTitle: "Gleam - Frosted Glass Task Drawer",
@@ -389,7 +394,7 @@ const I18N = {
     calPendingTasks: "Has pending tasks",
     updateBannerTitle: "New Version Available!",
     updateBannerDesc: "An update with new features and improvements is ready on GitHub.",
-    updateBtnDownload: "Download",
+    updateBtnDownload: "Auto Update",
     updateBtnDismiss: "Dismiss",
     settingUpdateTitle: "Software Updates",
     settingUpdateDesc: "Check for the latest releases on GitHub",
@@ -398,8 +403,13 @@ const I18N = {
     updateUpToDate: "You are already using the latest version.",
     updateAvailable: (ver) => `New version ${ver} is available for download!`,
     updateError: "Could not reach GitHub. Please check your internet connection.",
-    btnDownloadUpdate: "Download Update",
-    btnViewReleases: "View on GitHub"
+    btnDownloadUpdate: "Update Now",
+    btnViewReleases: "View on GitHub",
+    updateDownloading: "Downloading update package...",
+    updateReadyToInstall: "Download complete! Ready to install.",
+    updateInstalling: "Applying update and restarting...",
+    updateRestartBtn: "Install & Restart",
+    updateFailed: "Update download or install failed"
   }
 };
 
@@ -619,6 +629,18 @@ function initElements() {
   el.updateStatusActions = document.getElementById("update-status-actions");
   el.btnSettingsDownloadUpdate = document.getElementById("btn-settings-download-update");
   el.btnSettingsViewReleases = document.getElementById("btn-settings-view-releases");
+  el.updateBannerProgressWrap = document.getElementById("update-banner-progress-wrap");
+  el.updateProgressStatus = document.getElementById("update-progress-status");
+  el.updateProgressPercent = document.getElementById("update-progress-percent");
+  el.updateProgressFill = document.getElementById("update-progress-fill");
+  el.updateProgressBytes = document.getElementById("update-progress-bytes");
+  el.btnUpdateRestart = document.getElementById("btn-update-restart");
+  el.settingsUpdateProgressWrap = document.getElementById("settings-update-progress-wrap");
+  el.settingsUpdateProgressStatus = document.getElementById("settings-update-progress-status");
+  el.settingsUpdateProgressPercent = document.getElementById("settings-update-progress-percent");
+  el.settingsUpdateProgressFill = document.getElementById("settings-update-progress-fill");
+  el.settingsUpdateProgressBytes = document.getElementById("settings-update-progress-bytes");
+  el.btnSettingsRestartUpdate = document.getElementById("btn-settings-restart-update");
   el.editTaskTitleInput = document.getElementById("edit-task-title-input");
   el.editTaskNotesInput = document.getElementById("edit-task-notes-input");
   el.editTaskCategorySelect = document.getElementById("edit-task-category-select");
@@ -1713,6 +1735,138 @@ async function checkForUpdates(isAuto = false) {
   }
 }
 
+// In-App Updater Logic & State
+let downloadedInstallerPath = null;
+let isUpdateDownloading = false;
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "0 MB";
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(1)} MB`;
+}
+
+function getInstallerAsset(assets) {
+  if (!Array.isArray(assets) || assets.length === 0) return null;
+  const exeSetup = assets.find(a => typeof a.name === "string" && a.name.toLowerCase().endsWith("-setup.exe"));
+  if (exeSetup) return exeSetup;
+  const anyExe = assets.find(a => typeof a.name === "string" && a.name.toLowerCase().endsWith(".exe"));
+  if (anyExe) return anyExe;
+  const msi = assets.find(a => typeof a.name === "string" && a.name.toLowerCase().endsWith(".msi"));
+  if (msi) return msi;
+  return assets[0];
+}
+
+async function startInAppUpdate() {
+  if (isUpdateDownloading) return;
+  if (!latestReleaseInfo) return;
+
+  const asset = getInstallerAsset(latestReleaseInfo.assets);
+  if (!asset || !asset.browser_download_url) {
+    const url = latestReleaseInfo.html_url || GITHUB_RELEASES_PAGE;
+    openExternalLink(url);
+    return;
+  }
+
+  isUpdateDownloading = true;
+
+  if (el.updateBannerProgressWrap) el.updateBannerProgressWrap.style.display = "flex";
+  if (el.btnUpdateDownload) el.btnUpdateDownload.style.display = "none";
+  if (el.settingsUpdateProgressWrap) el.settingsUpdateProgressWrap.style.display = "flex";
+  if (el.updateStatusActions) el.updateStatusActions.style.display = "none";
+
+  updateProgressUI({
+    status: "starting",
+    percent: 0,
+    downloaded_bytes: 0,
+    total_bytes: asset.size || 0
+  });
+
+  try {
+    const installerPath = await invoke("download_update", {
+      downloadUrl: asset.browser_download_url,
+      targetVersion: latestReleaseInfo.tag_name || "latest"
+    });
+    downloadedInstallerPath = installerPath;
+  } catch (err) {
+    console.error("Update download invocation failed:", err);
+    updateProgressUI({
+      status: "error",
+      error: String(err)
+    });
+    isUpdateDownloading = false;
+  }
+}
+
+async function applyUpdateAndRestart() {
+  if (!downloadedInstallerPath) return;
+  const lang = settings.lang || "fa";
+  const t = I18N[lang] || I18N.fa;
+
+  if (el.updateProgressStatus) el.updateProgressStatus.textContent = t.updateInstalling;
+  if (el.settingsUpdateProgressStatus) el.settingsUpdateProgressStatus.textContent = t.updateInstalling;
+  if (el.btnUpdateRestart) el.btnUpdateRestart.disabled = true;
+  if (el.btnSettingsRestartUpdate) el.btnSettingsRestartUpdate.disabled = true;
+
+  try {
+    await invoke("install_and_restart", { installerPath: downloadedInstallerPath });
+  } catch (err) {
+    console.error("Failed to install and restart:", err);
+    if (el.updateProgressStatus) el.updateProgressStatus.textContent = `${t.updateFailed}: ${err}`;
+    if (el.settingsUpdateProgressStatus) el.settingsUpdateProgressStatus.textContent = `${t.updateFailed}: ${err}`;
+  }
+}
+
+function updateProgressUI(payload) {
+  const lang = settings.lang || "fa";
+  const t = I18N[lang] || I18N.fa;
+  const isFa = lang === "fa";
+
+  const percent = Math.min(100, Math.max(0, payload.percent || 0));
+  const percentText = isFa ? toPersianNum(Math.round(percent)) + "٪" : Math.round(percent) + "%";
+  const bytesText = payload.total_bytes > 0
+    ? `${isFa ? toPersianNum(formatBytes(payload.downloaded_bytes)) : formatBytes(payload.downloaded_bytes)} / ${isFa ? toPersianNum(formatBytes(payload.total_bytes)) : formatBytes(payload.total_bytes)}`
+    : (isFa ? toPersianNum(formatBytes(payload.downloaded_bytes)) : formatBytes(payload.downloaded_bytes));
+
+  if (el.updateProgressFill) el.updateProgressFill.style.width = `${percent}%`;
+  if (el.settingsUpdateProgressFill) el.settingsUpdateProgressFill.style.width = `${percent}%`;
+
+  if (el.updateProgressPercent) el.updateProgressPercent.textContent = percentText;
+  if (el.settingsUpdateProgressPercent) el.settingsUpdateProgressPercent.textContent = percentText;
+
+  if (el.updateProgressBytes) el.updateProgressBytes.textContent = bytesText;
+  if (el.settingsUpdateProgressBytes) el.settingsUpdateProgressBytes.textContent = bytesText;
+
+  if (payload.status === "downloading" || payload.status === "starting") {
+    if (el.updateProgressStatus) el.updateProgressStatus.textContent = t.updateDownloading;
+    if (el.settingsUpdateProgressStatus) el.settingsUpdateProgressStatus.textContent = t.updateDownloading;
+  } else if (payload.status === "downloaded") {
+    isUpdateDownloading = false;
+    downloadedInstallerPath = payload.installer_path || downloadedInstallerPath;
+
+    if (el.updateProgressStatus) el.updateProgressStatus.textContent = t.updateReadyToInstall;
+    if (el.settingsUpdateProgressStatus) el.settingsUpdateProgressStatus.textContent = t.updateReadyToInstall;
+
+    if (el.btnUpdateRestart) {
+      el.btnUpdateRestart.style.display = "inline-block";
+      el.btnUpdateRestart.textContent = t.updateRestartBtn;
+      el.btnUpdateRestart.disabled = false;
+    }
+    if (el.btnSettingsRestartUpdate) {
+      el.btnSettingsRestartUpdate.style.display = "inline-block";
+      el.btnSettingsRestartUpdate.textContent = t.updateRestartBtn;
+      el.btnSettingsRestartUpdate.disabled = false;
+    }
+  } else if (payload.status === "error") {
+    isUpdateDownloading = false;
+    const errMsg = payload.error ? `${t.updateFailed}: ${payload.error}` : t.updateFailed;
+    if (el.updateProgressStatus) el.updateProgressStatus.textContent = errMsg;
+    if (el.settingsUpdateProgressStatus) el.settingsUpdateProgressStatus.textContent = errMsg;
+    if (el.btnUpdateDownload) el.btnUpdateDownload.style.display = "inline-block";
+    if (el.updateStatusActions) el.updateStatusActions.style.display = "flex";
+  }
+}
+
+
 // ==========================================================================
 // کنترل‌کننده تغییر زبان (Language Switcher Controller)
 // ==========================================================================
@@ -1915,6 +2069,8 @@ function applyLanguage(lang) {
   if (el.btnCheckUpdatesText) el.btnCheckUpdatesText.textContent = t.btnCheckUpdates;
   if (el.btnSettingsDownloadUpdate) el.btnSettingsDownloadUpdate.textContent = t.btnDownloadUpdate;
   if (el.btnSettingsViewReleases) el.btnSettingsViewReleases.textContent = t.btnViewReleases;
+  if (el.btnUpdateRestart) el.btnUpdateRestart.textContent = t.updateRestartBtn;
+  if (el.btnSettingsRestartUpdate) el.btnSettingsRestartUpdate.textContent = t.updateRestartBtn;
 
   // به‌روزرسانی منوی سیستم تری در Rust
   try {
@@ -2457,6 +2613,12 @@ function setupListeners() {
     listen("request-close-drawer", () => {
       closeDrawer();
     });
+
+    listen("update-progress", (event) => {
+      if (event && event.payload) {
+        updateProgressUI(event.payload);
+      }
+    });
   }
 
   // رویدادهای سیستم به‌روزرسانی (GitHub Updates)
@@ -2468,8 +2630,13 @@ function setupListeners() {
 
   if (el.btnUpdateDownload) {
     el.btnUpdateDownload.addEventListener("click", () => {
-      const url = (latestReleaseInfo && latestReleaseInfo.html_url) ? latestReleaseInfo.html_url : GITHUB_RELEASES_PAGE;
-      openExternalLink(url);
+      startInAppUpdate();
+    });
+  }
+
+  if (el.btnUpdateRestart) {
+    el.btnUpdateRestart.addEventListener("click", () => {
+      applyUpdateAndRestart();
     });
   }
 
@@ -2484,8 +2651,13 @@ function setupListeners() {
 
   if (el.btnSettingsDownloadUpdate) {
     el.btnSettingsDownloadUpdate.addEventListener("click", () => {
-      const url = (latestReleaseInfo && latestReleaseInfo.html_url) ? latestReleaseInfo.html_url : GITHUB_RELEASES_PAGE;
-      openExternalLink(url);
+      startInAppUpdate();
+    });
+  }
+
+  if (el.btnSettingsRestartUpdate) {
+    el.btnSettingsRestartUpdate.addEventListener("click", () => {
+      applyUpdateAndRestart();
     });
   }
 

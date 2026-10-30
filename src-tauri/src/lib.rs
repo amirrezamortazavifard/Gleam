@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
@@ -477,6 +478,213 @@ fn update_tray_menu(app: AppHandle, lang: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Clone, Serialize)]
+pub struct UpdateProgressPayload {
+    pub status: String,
+    pub downloaded_bytes: u64,
+    pub total_bytes: u64,
+    pub percent: f64,
+    pub error: Option<String>,
+    pub installer_path: Option<String>,
+}
+
+#[tauri::command]
+fn download_update(app: AppHandle, download_url: String, target_version: String) -> Result<String, String> {
+    let app_handle = app.clone();
+    let temp_dir = std::env::temp_dir();
+    let clean_version = target_version.trim_start_matches('v').replace('/', "_");
+    let file_name = format!("Gleam-Setup-v{}.exe", clean_version);
+    let target_path = temp_dir.join(&file_name);
+    let target_path_str = target_path.to_string_lossy().to_string();
+    let closure_target_path = target_path_str.clone();
+
+    std::thread::spawn(move || {
+        let emit_update = |payload: UpdateProgressPayload| {
+            let _ = app_handle.emit("update-progress", payload);
+        };
+
+        emit_update(UpdateProgressPayload {
+            status: "starting".to_string(),
+            downloaded_bytes: 0,
+            total_bytes: 0,
+            percent: 0.0,
+            error: None,
+            installer_path: None,
+        });
+
+        let client = match reqwest::blocking::Client::builder()
+            .user_agent("Gleam-Desktop-App/1.0.2")
+            .timeout(std::time::Duration::from_secs(600))
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                emit_update(UpdateProgressPayload {
+                    status: "error".to_string(),
+                    downloaded_bytes: 0,
+                    total_bytes: 0,
+                    percent: 0.0,
+                    error: Some(format!("Failed to build HTTP client: {e}")),
+                    installer_path: None,
+                });
+                return;
+            }
+        };
+
+        let mut response = match client.get(&download_url).send() {
+            Ok(resp) => {
+                if !resp.status().is_success() {
+                    emit_update(UpdateProgressPayload {
+                        status: "error".to_string(),
+                        downloaded_bytes: 0,
+                        total_bytes: 0,
+                        percent: 0.0,
+                        error: Some(format!("Server returned HTTP {}", resp.status())),
+                        installer_path: None,
+                    });
+                    return;
+                }
+                resp
+            }
+            Err(e) => {
+                emit_update(UpdateProgressPayload {
+                    status: "error".to_string(),
+                    downloaded_bytes: 0,
+                    total_bytes: 0,
+                    percent: 0.0,
+                    error: Some(format!("Network download error: {e}")),
+                    installer_path: None,
+                });
+                return;
+            }
+        };
+
+        let total_bytes = response.content_length().unwrap_or(0);
+        let mut file = match std::fs::File::create(&target_path) {
+            Ok(f) => f,
+            Err(e) => {
+                emit_update(UpdateProgressPayload {
+                    status: "error".to_string(),
+                    downloaded_bytes: 0,
+                    total_bytes,
+                    percent: 0.0,
+                    error: Some(format!("Failed to create temporary file: {e}")),
+                    installer_path: None,
+                });
+                return;
+            }
+        };
+
+        let mut downloaded_bytes: u64 = 0;
+        let mut buffer = [0u8; 32768];
+        let mut last_emit = std::time::Instant::now();
+        let mut last_percent: f64 = 0.0;
+
+        loop {
+            match response.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => {
+                    if let Err(e) = file.write_all(&buffer[..n]) {
+                        emit_update(UpdateProgressPayload {
+                            status: "error".to_string(),
+                            downloaded_bytes,
+                            total_bytes,
+                            percent: if total_bytes > 0 { (downloaded_bytes as f64 / total_bytes as f64) * 100.0 } else { 0.0 },
+                            error: Some(format!("Failed writing to disk: {e}")),
+                            installer_path: None,
+                        });
+                        return;
+                    }
+                    downloaded_bytes += n as u64;
+
+                    let percent = if total_bytes > 0 {
+                        ((downloaded_bytes as f64 / total_bytes as f64) * 100.0).min(100.0)
+                    } else {
+                        0.0
+                    };
+
+                    if last_emit.elapsed() >= std::time::Duration::from_millis(100) || (percent - last_percent) >= 1.0 {
+                        last_emit = std::time::Instant::now();
+                        last_percent = percent;
+                        emit_update(UpdateProgressPayload {
+                            status: "downloading".to_string(),
+                            downloaded_bytes,
+                            total_bytes,
+                            percent: (percent * 10.0).round() / 10.0,
+                            error: None,
+                            installer_path: None,
+                        });
+                    }
+                }
+                Err(e) => {
+                    emit_update(UpdateProgressPayload {
+                        status: "error".to_string(),
+                        downloaded_bytes,
+                        total_bytes,
+                        percent: if total_bytes > 0 { (downloaded_bytes as f64 / total_bytes as f64) * 100.0 } else { 0.0 },
+                        error: Some(format!("Read error during download: {e}")),
+                        installer_path: None,
+                    });
+                    return;
+                }
+            }
+        }
+
+        let _ = file.flush();
+
+        emit_update(UpdateProgressPayload {
+            status: "downloaded".to_string(),
+            downloaded_bytes,
+            total_bytes: if total_bytes > 0 { total_bytes } else { downloaded_bytes },
+            percent: 100.0,
+            error: None,
+            installer_path: Some(closure_target_path),
+        });
+    });
+
+    Ok(target_path_str)
+}
+
+#[tauri::command]
+fn install_and_restart(app: AppHandle, installer_path: String) -> Result<(), String> {
+    let path = std::path::PathBuf::from(&installer_path);
+    if !path.exists() {
+        return Err(format!("Installer file not found at: {}", installer_path));
+    }
+
+    let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let installer_str = path.to_string_lossy().to_string();
+        let exe_str = current_exe.to_string_lossy().to_string();
+
+        let cmd = format!(
+            "$inst = '{}'; Start-Sleep -Milliseconds 800; Start-Process -FilePath $inst -ArgumentList '/S' -Wait; $mainExe = Join-Path $env:LOCALAPPDATA 'Programs\\Gleam\\gleam.exe'; if (Test-Path $mainExe) {{ Start-Process -FilePath $mainExe }} else {{ Start-Process -FilePath '{}' }}",
+            installer_str.replace('\'', "''"),
+            exe_str.replace('\'', "''")
+        );
+
+        std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &cmd])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|e| format!("Failed to spawn updater process: {e}"))?;
+
+        app.exit(0);
+        return Ok(());
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (app, installer_path, current_exe);
+        return Err("Automatic silent installation is currently configured for Windows.".to_string());
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -495,7 +703,9 @@ pub fn run() {
             hide_drawer,
             toggle_drawer,
             update_tray_menu,
-            open_external
+            open_external,
+            download_update,
+            install_and_restart
         ])
         .setup(|app| {
             let handle = app.handle().clone();

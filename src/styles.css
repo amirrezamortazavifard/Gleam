@@ -2205,12 +2205,20 @@ input:checked + .slider::before {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   animation: slideDownUpdate 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   z-index: 5;
   flex-shrink: 0;
+}
+
+.update-banner-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
 }
 
 @keyframes slideDownUpdate {
@@ -2330,6 +2338,107 @@ input:checked + .slider::before {
 .update-btn-dismiss:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #FFFFFF;
+}
+
+/* In-App Update Progress Bars (Frosted Glass Styling) */
+.update-banner-progress-wrap,
+.settings-update-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(56, 213, 242, 0.25);
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.update-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.update-progress-status {
+  color: var(--accent-primary);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.update-progress-percent {
+  color: #FFFFFF;
+  font-weight: var(--font-weight-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.update-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.update-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 50%, #00f2fe 100%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 10px rgba(56, 213, 242, 0.65);
+  transition: width 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmerProgress 2s linear infinite;
+}
+
+@keyframes shimmerProgress {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.update-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.update-progress-bytes {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.update-btn-restart {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  animation: pulseGreen 1.8s infinite ease-in-out;
+}
+
+.update-btn-restart:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.8); }
 }
 
 /* Settings Update Section */
