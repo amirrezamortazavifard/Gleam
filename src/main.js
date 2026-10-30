@@ -180,13 +180,13 @@ const I18N = {
     categoryAll: "همه",
     categoryGeneral: "عمومی",
     categoriesList: [
-      { value: "شخصی", label: "شخصی" },
-      { value: "کاری", label: "کاری" },
-      { value: "پروژه‌ها", label: "پروژه‌ها" },
-      { value: "مطالعه", label: "مطالعه" },
-      { value: "سلامتی", label: "سلامتی" },
-      { value: "ایده‌ها", label: "ایده‌ها" },
-      { value: "روزانه", label: "روزانه" }
+      { value: "Personal", label: "شخصی" },
+      { value: "Work", label: "کار" },
+      { value: "Projects", label: "پروژه‌ها" },
+      { value: "Study", label: "مطالعه" },
+      { value: "Health", label: "سلامتی" },
+      { value: "Ideas", label: "ایده‌ها" },
+      { value: "Daily", label: "روزانه" }
     ],
     dueLabel: "موعد",
     duePickerTitle: "تعیین موعد مقرر در تقویم",
@@ -403,8 +403,9 @@ const I18N = {
   }
 };
 
-// استیت
+// State
 let todos = [];
+const expandedSubtaskIds = new Set();
 let settings = {
   sound_enabled: true,
   always_on_top: true,
@@ -412,11 +413,11 @@ let settings = {
   launch_at_startup: false,
   shortcut: "CommandOrControl+Shift+Space",
   theme: "theme-apple-frost",
-  lang: "fa"
+  lang: "en"
 };
 
 let currentFilter = "all"; // "all" | "active" | "completed" | "high"
-let currentCategory = "همه";
+let currentCategory = "All";
 let searchQuery = "";
 let selectedPriority = "medium";
 let selectedDueDate = null;
@@ -640,81 +641,177 @@ function initElements() {
   el.btnConfirmAccept = document.getElementById("btn-confirm-accept");
 }
 
+// Bilingual Initial Sample Tasks
+function getInitialSampleTasks(lang = "en") {
+  const isFa = lang === "fa";
+  const today = new Date().toISOString().split("T")[0];
+  const now = new Date().toISOString();
+
+  if (isFa) {
+    return [
+      {
+        id: "task-1",
+        title: "طراحی رابط کاربری شیشه‌ای برای پنل کشویی دسکتاپ",
+        notes: "شامل افکت blur مات شیشه و انیمیشن روان",
+        completed: true,
+        priority: "high",
+        category: "Projects",
+        due_date: today,
+        created_at: now,
+        completed_at: now,
+        subtasks: [
+          { id: "sub-1", title: "راه‌اندازی بک‌اند Tauri با Rust", completed: true },
+          { id: "sub-2", title: "ساخت پنل چسبیده به سمت راست مانیتور", completed: true }
+        ]
+      },
+      {
+        id: "task-2",
+        title: "افزودن بازخورد صوتی کریستالی و انتخابگر تم",
+        notes: "سینت‌سایزر وب‌آدیو برای صدای ناقوس شیشه",
+        completed: true,
+        priority: "medium",
+        category: "Work",
+        due_date: today,
+        created_at: now,
+        completed_at: now,
+        subtasks: []
+      },
+      {
+        id: "task-3",
+        title: "آزمایش کلید میانبر سراسری (Ctrl+Shift+Space)",
+        notes: "بررسی Toggle آنی از هر برنامه‌ای در ویندوز",
+        completed: false,
+        priority: "high",
+        category: "Work",
+        due_date: today,
+        created_at: now,
+        completed_at: null,
+        subtasks: []
+      },
+      {
+        id: "task-4",
+        title: "برنامه‌ریزی نقشه راه آخر هفته",
+        notes: "",
+        completed: false,
+        priority: "low",
+        category: "Personal",
+        due_date: null,
+        created_at: now,
+        completed_at: null,
+        subtasks: []
+      }
+    ];
+  }
+
+  return [
+    {
+      id: "task-1",
+      title: "Design frosted glass desktop task drawer",
+      notes: "Modern blurred acrylic aesthetics with smooth slide transitions",
+      completed: true,
+      priority: "high",
+      category: "Projects",
+      due_date: today,
+      created_at: now,
+      completed_at: now,
+      subtasks: [
+        { id: "sub-1", title: "Setup Tauri Rust backend and acrylic blur", completed: true },
+        { id: "sub-2", title: "Build right-docked sliding screen drawer", completed: true }
+      ]
+    },
+    {
+      id: "task-2",
+      title: "Add crystal audio feedback and theme selector",
+      notes: "WebAudio synthesizer for high-end tactile chime acoustics",
+      completed: true,
+      priority: "medium",
+      category: "Work",
+      due_date: today,
+      created_at: now,
+      completed_at: now,
+      subtasks: []
+    },
+    {
+      id: "task-3",
+      title: "Test global toggle shortcut (Ctrl+Shift+Space)",
+      notes: "Verify instant access from any app in Windows",
+      completed: false,
+      priority: "high",
+      category: "Work",
+      due_date: today,
+      created_at: now,
+      completed_at: null,
+      subtasks: []
+    },
+    {
+      id: "task-4",
+      title: "Plan weekend deep work & study roadmap",
+      notes: "System architecture and Rust performance tuning",
+      completed: false,
+      priority: "low",
+      category: "Personal",
+      due_date: null,
+      created_at: now,
+      completed_at: null,
+      subtasks: []
+    }
+  ];
+}
+
 // Persistence
 async function loadData() {
   try {
-    const loadedTodos = await invoke("get_todos");
-    if (Array.isArray(loadedTodos) && loadedTodos.length > 0) {
-      todos = loadedTodos;
-    } else {
-      // داده‌های اولیه نمونه به زبان فارسی
-      todos = [
-        {
-          id: "task-1",
-          title: "طراحی رابط کاربری شیشه‌ای برای پنل کشویی دسکتاپ",
-          notes: "شامل افکت blur مات شیشه و انیمیشن روان",
-          completed: true,
-          priority: "high",
-          category: "پروژه‌ها",
-          due_date: new Date().toISOString().split("T")[0],
-          created_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-          subtasks: [
-            { id: "sub-1", title: "راه‌اندازی بک‌اند Tauri با Rust", completed: true },
-            { id: "sub-2", title: "ساخت پنل چسبیده به سمت راست مانیتور", completed: true }
-          ]
-        },
-        {
-          id: "task-2",
-          title: "افزودن بازخورد صوتی کریستالی و انتخابگر تم",
-          notes: "سینت‌سایزر وب‌آدیو برای صدای ناقوس شیشه",
-          completed: true,
-          priority: "medium",
-          category: "کار",
-          due_date: new Date().toISOString().split("T")[0],
-          created_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-          subtasks: []
-        },
-        {
-          id: "task-3",
-          title: "آزمایش کلید میانبر سراسری (Ctrl+Shift+Space)",
-          notes: "بررسی Toggle آنی از هر برنامه‌ای در ویندوز",
-          completed: false,
-          priority: "high",
-          category: "کار",
-          due_date: new Date().toISOString().split("T")[0],
-          created_at: new Date().toISOString(),
-          completed_at: null,
-          subtasks: []
-        },
-        {
-          id: "task-4",
-          title: "برنامه‌ریزی نقشه راه آخر هفته",
-          notes: "",
-          completed: false,
-          priority: "low",
-          category: "شخصی",
-          due_date: null,
-          created_at: new Date().toISOString(),
-          completed_at: null,
-          subtasks: []
-        }
-      ];
-      await persistTodos();
-    }
-
     const loadedSettings = await invoke("get_settings");
     if (loadedSettings) {
       settings = { ...settings, ...loadedSettings };
     }
+
+    let loadedData = null;
+    try {
+      loadedData = await invoke("load_todos");
+    } catch (_) {
+      try {
+        const rawTodos = await invoke("get_todos");
+        loadedData = { exists: Array.isArray(rawTodos) && rawTodos.length > 0, todos: rawTodos || [] };
+      } catch (e) {
+        console.warn("Could not invoke get_todos:", e);
+      }
+    }
+
+    const hasInitMarker = localStorage.getItem("gleam_initialized") === "true";
+    const cachedTodosStr = localStorage.getItem("gleam_todos_cache");
+
+    if (loadedData && loadedData.exists) {
+      // Backend file exists: respect user's data completely, even if empty array!
+      todos = Array.isArray(loadedData.todos) ? loadedData.todos : [];
+      localStorage.setItem("gleam_initialized", "true");
+      localStorage.setItem("gleam_todos_cache", JSON.stringify(todos));
+    } else if (hasInitMarker && cachedTodosStr) {
+      // Recover from localStorage cache if available
+      try {
+        todos = JSON.parse(cachedTodosStr);
+        await persistTodos();
+      } catch {
+        todos = [];
+      }
+    } else {
+      // Brand new first installation: seed default tasks once
+      todos = getInitialSampleTasks(settings.lang || "en");
+      localStorage.setItem("gleam_initialized", "true");
+      localStorage.setItem("gleam_todos_cache", JSON.stringify(todos));
+      await persistTodos();
+    }
   } catch (err) {
-    console.error("خطا در بارگذاری داده:", err);
+    console.error("Error loading data:", err);
   }
 }
 
 async function persistTodos() {
   try {
+    try {
+      localStorage.setItem("gleam_todos_cache", JSON.stringify(todos));
+      localStorage.setItem("gleam_initialized", "true");
+    } catch (_) {}
     await invoke("save_todos", { todos });
   } catch (err) {
     console.error("Failed to save todos:", err);
@@ -723,6 +820,9 @@ async function persistTodos() {
 
 async function persistSettings() {
   try {
+    try {
+      localStorage.setItem("gleam_settings_cache", JSON.stringify(settings));
+    } catch (_) {}
     await invoke("save_settings", { settings });
   } catch (err) {
     console.error("Failed to save settings:", err);
@@ -785,19 +885,33 @@ function renderProgress() {
   }
 }
 
-// نگاشت دوزبانه دسته‌بندی‌ها برای حفظ یکپارچگی ۱۰۰٪ زبان
+// Canonical Category Mapping for 100% Robust Bilingual Parity
+const CANONICAL_CATEGORIES = ["Personal", "Work", "Projects", "Study", "Health", "Ideas", "Daily", "General"];
+
 const CATEGORY_MAP_TO_EN = {
   "کار": "Work",
   "کاری": "Work",
   "شخصی": "Personal",
   "پروژه‌ها": "Projects",
+  "پروژه": "Projects",
   "مطالعه": "Study",
   "سلامتی": "Health",
   "ایده‌ها": "Ideas",
+  "ایده": "Ideas",
   "روزانه": "Daily",
   "عمومی": "General",
-  "همه": "All"
+  "همه": "All",
+  "All": "All",
+  "Work": "Work",
+  "Personal": "Personal",
+  "Projects": "Projects",
+  "Study": "Study",
+  "Health": "Health",
+  "Ideas": "Ideas",
+  "Daily": "Daily",
+  "General": "General"
 };
+
 const CATEGORY_MAP_TO_FA = {
   "Work": "کار",
   "Personal": "شخصی",
@@ -807,24 +921,40 @@ const CATEGORY_MAP_TO_FA = {
   "Ideas": "ایده‌ها",
   "Daily": "روزانه",
   "General": "عمومی",
-  "All": "همه"
+  "All": "همه",
+  "کار": "کار",
+  "کاری": "کار",
+  "شخصی": "شخصی",
+  "پروژه‌ها": "پروژه‌ها",
+  "مطالعه": "مطالعه",
+  "سلامتی": "سلامتی",
+  "ایده‌ها": "ایده‌ها",
+  "روزانه": "روزانه",
+  "عمومی": "عمومی",
+  "همه": "همه"
 };
 
-function getLocalizedCategory(cat, lang = settings.lang || "fa") {
+function normalizeCategory(cat) {
+  if (!cat) return "Personal";
+  return CATEGORY_MAP_TO_EN[cat] || cat;
+}
+
+function getLocalizedCategory(cat, lang = settings.lang || "en") {
   if (!cat) return lang === "fa" ? "عمومی" : "General";
+  const canonical = normalizeCategory(cat);
   if (lang === "fa") {
-    return CATEGORY_MAP_TO_FA[cat] || cat;
+    return CATEGORY_MAP_TO_FA[canonical] || CATEGORY_MAP_TO_FA[cat] || cat;
   } else {
-    return CATEGORY_MAP_TO_EN[cat] || cat;
+    return canonical;
   }
 }
 
 function renderCategories() {
-  const lang = settings.lang || "fa";
-  const t = I18N[lang] || I18N.fa;
-  const allLabel = t.categoryAll;
+  const lang = settings.lang || "en";
+  const t = I18N[lang] || I18N.en;
+  const allLabel = t.categoryAll || (lang === "fa" ? "همه" : "All");
 
-  // جمع‌آوری تمام دسته‌بندی‌های منحصربه‌فرد با ترجمه خودکار
+  // Collect all unique categories
   const categoriesMap = {};
   categoriesMap[allLabel] = todos.length;
   todos.forEach((item) => {
@@ -851,26 +981,28 @@ function renderCategories() {
 }
 
 function renderTasks() {
-  const lang = settings.lang || "fa";
-  const t = I18N[lang] || I18N.fa;
-  const allLabel = t.categoryAll;
+  const lang = settings.lang || "en";
+  const t = I18N[lang] || I18N.en;
+  const allLabel = t.categoryAll || (lang === "fa" ? "همه" : "All");
 
-  // فیلتر کردن کارها
+  // Filter tasks
   let filtered = todos.filter((item) => {
-    // فیلتر تب
+    // Filter tab
     if (currentFilter === "active" && item.completed) return false;
     if (currentFilter === "completed" && !item.completed) return false;
     if (currentFilter === "high" && item.priority !== "high") return false;
 
-    // فیلتر دسته‌بندی با بررسی نام محلی و ذخیره‌شده
+    // Filter category
     if (currentCategory !== allLabel && currentCategory !== "همه" && currentCategory !== "All") {
       const itemCatLocalized = getLocalizedCategory(item.category, lang);
-      if (itemCatLocalized !== currentCategory && item.category !== currentCategory) {
+      const currentCatCanonical = normalizeCategory(currentCategory);
+      const itemCatCanonical = normalizeCategory(item.category);
+      if (itemCatLocalized !== currentCategory && currentCatCanonical !== itemCatCanonical) {
         return false;
       }
     }
 
-    // جستجو
+    // Search
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
       const inTitle = (item.title || "").toLowerCase().includes(q);
@@ -882,7 +1014,7 @@ function renderTasks() {
     return true;
   });
 
-  // مرتب‌سازی: ابتدا ناتمام، بعد اولویت، بعد تاریخ ایجاد
+  // Sorting: uncompleted first, then priority weight, then creation date
   const priorityWeight = { high: 3, medium: 2, low: 1 };
   filtered.sort((a, b) => {
     if (a.completed !== b.completed) {
@@ -910,14 +1042,14 @@ function renderTasks() {
 }
 
 function createTaskCard(task) {
-  const lang = settings.lang || "fa";
-  const t = I18N[lang] || I18N.fa;
+  const lang = settings.lang || "en";
+  const t = I18N[lang] || I18N.en;
 
   const card = document.createElement("div");
   card.className = `task-card priority-${task.priority} ${task.completed ? "completed" : ""}`;
   card.id = `todo-${task.id}`;
 
-  // وضعیت تاریخ سررسید
+  // Due date status badge
   let dueHtml = "";
   if (task.due_date) {
     const todayStr = new Date().toISOString().split("T")[0];
@@ -931,7 +1063,7 @@ function createTaskCard(task) {
     </span>`;
   }
 
-  // نشانگر اولویت با متن و نشانگر برای دسترس‌پذیری WCAG
+  // Priority indicator with WCAG accessibility
   let prioLabel = lang === "fa" ? "متوسط" : "Medium";
   let prioClass = "med";
   if (task.priority === "high") {
@@ -946,11 +1078,16 @@ function createTaskCard(task) {
     ${prioLabel}
   </span>`;
 
-  // پیشرفت زیرتسک‌ها
+  // Subtasks counter badge
   const totalSubtasks = (task.subtasks || []).length;
   const completedSubtasks = (task.subtasks || []).filter((s) => s.completed).length;
   const subtasksBadge = totalSubtasks > 0 
     ? `<span class="task-tag subtasks-chip">${t.subtasksCount(completedSubtasks, totalSubtasks)}</span>` 
+    : "";
+
+  // Note snippet preview if notes exist
+  const notesSnippet = (task.notes && task.notes.trim()) 
+    ? `<div class="task-notes-snippet" dir="auto">${escapeHtml(task.notes.trim())}</div>` 
     : "";
 
   card.innerHTML = `
@@ -977,6 +1114,7 @@ function createTaskCard(task) {
             </button>
           </div>
         </div>
+        ${notesSnippet}
         <div class="task-badges">
           ${prioBadge}
           <span class="task-tag category-badge">${escapeHtml(getLocalizedCategory(task.category, lang))}</span>
@@ -988,25 +1126,32 @@ function createTaskCard(task) {
     <div class="task-details-pane" style="display: none;"></div>
   `;
 
-  // اتصال رویدادها
+  // Attach events
   const toggleBtn = card.querySelector('[data-action="toggle"]');
   toggleBtn.addEventListener("click", () => toggleTodo(task.id));
 
   const deleteBtn = card.querySelector('[data-action="delete"]');
   deleteBtn.addEventListener("click", () => deleteTodo(task.id));
 
-  // باز کردن مودال زیبای شیشه‌ای برای ادیت
   const editBtn = card.querySelector('[data-action="edit"]');
   editBtn.addEventListener("click", () => openEditTaskModal(task.id));
 
   const subtasksBtn = card.querySelector('[data-action="subtasks"]');
   const detailsPane = card.querySelector(".task-details-pane");
+
+  if (expandedSubtaskIds.has(task.id)) {
+    renderSubtasksPane(detailsPane, task);
+    detailsPane.style.display = "flex";
+  }
+
   subtasksBtn.addEventListener("click", () => {
-    if (detailsPane.style.display === "none") {
+    if (expandedSubtaskIds.has(task.id)) {
+      expandedSubtaskIds.delete(task.id);
+      detailsPane.style.display = "none";
+    } else {
+      expandedSubtaskIds.add(task.id);
       renderSubtasksPane(detailsPane, task);
       detailsPane.style.display = "flex";
-    } else {
-      detailsPane.style.display = "none";
     }
   });
 
@@ -1097,7 +1242,13 @@ function openEditTaskModal(id) {
   if (el.editTaskTitleInput) el.editTaskTitleInput.value = task.title || "";
   if (el.editTaskNotesInput) el.editTaskNotesInput.value = task.notes || "";
   if (el.editTaskCategorySelect) {
-    el.editTaskCategorySelect.value = task.category || "Personal";
+    const canonical = normalizeCategory(task.category);
+    const match = Array.from(el.editTaskCategorySelect.options).find(o => normalizeCategory(o.value) === canonical);
+    if (match) {
+      el.editTaskCategorySelect.value = match.value;
+    } else {
+      el.editTaskCategorySelect.value = canonical || "Personal";
+    }
   }
 
   // تنظیم اولویت در دکمه‌ها
@@ -1198,13 +1349,14 @@ async function addTodoFromInput() {
   const title = el.inputTitle.value.trim();
   if (!title) return;
 
-  const category = el.selectCategory.value || "Personal";
+  const rawCat = el.selectCategory ? el.selectCategory.value : "Personal";
+  const category = normalizeCategory(rawCat);
   const newTask = {
-    id: "task-" + Date.now(),
+    id: "task-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
     title,
     notes: "",
     completed: false,
-    priority: selectedPriority,
+    priority: selectedPriority || "medium",
     category,
     due_date: selectedDueDate,
     created_at: new Date().toISOString(),
@@ -1219,8 +1371,8 @@ async function addTodoFromInput() {
   // Reset inputs
   el.inputTitle.value = "";
   selectedDueDate = null;
-  const lang = settings.lang || "fa";
-  el.dueLabel.textContent = I18N[lang]?.dueLabel || "موعد";
+  const lang = settings.lang || "en";
+  el.dueLabel.textContent = I18N[lang]?.dueLabel || "Due Date";
   el.btnDueToggle.classList.remove("active");
   render();
   el.inputTitle.focus();
@@ -1251,26 +1403,43 @@ function escapeHtml(str) {
 // ==========================================================================
 function initCalendarState() {
   const now = new Date();
-  const { jy, jm } = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  calState.viewYear = jy;
-  calState.viewMonth = jm;
+  const lang = settings.lang || "en";
+  if (lang === "fa") {
+    const { jy, jm } = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    calState.viewYear = jy;
+    calState.viewMonth = jm;
+  } else {
+    calState.viewYear = now.getFullYear();
+    calState.viewMonth = now.getMonth() + 1;
+  }
 }
 
 function openCalendarModal(target = "due_picker") {
   calState.target = target;
   const targetIso = (target === "edit_due_picker") ? editSelectedDueDate : selectedDueDate;
+  const lang = settings.lang || "en";
 
   if (targetIso) {
     const [y, m, d] = targetIso.split("-").map(Number);
-    const { jy, jm } = gregorianToJalali(y, m, d);
-    calState.viewYear = jy;
-    calState.viewMonth = jm;
+    if (lang === "fa") {
+      const { jy, jm } = gregorianToJalali(y, m, d);
+      calState.viewYear = jy;
+      calState.viewMonth = jm;
+    } else {
+      calState.viewYear = y;
+      calState.viewMonth = m;
+    }
     calState.selectedIso = targetIso;
   } else {
     const now = new Date();
-    const { jy, jm } = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-    calState.viewYear = jy;
-    calState.viewMonth = jm;
+    if (lang === "fa") {
+      const { jy, jm } = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      calState.viewYear = jy;
+      calState.viewMonth = jm;
+    } else {
+      calState.viewYear = now.getFullYear();
+      calState.viewMonth = now.getMonth() + 1;
+    }
     calState.selectedIso = null;
   }
 
@@ -1288,16 +1457,16 @@ function closeCalendarModal() {
 
 function renderCalendar() {
   if (!el.calMonthName || !el.calDaysGrid) return;
-  const lang = settings.lang || "fa";
+  const lang = settings.lang || "en";
+  const isFa = lang === "fa";
 
-  // به‌روزرسانی سرستون‌های روزهای هفته
   if (el.calWeekdaysContainer) {
     el.calWeekdaysContainer.innerHTML = "";
-    const weekdaysList = (lang === "fa") ? JALALI_WEEKDAYS_SHORT_FA : GREGORIAN_WEEKDAYS_SHORT_EN;
+    const weekdaysList = isFa ? JALALI_WEEKDAYS_SHORT_FA : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
     weekdaysList.forEach((w, idx) => {
       const span = document.createElement("span");
       span.textContent = w;
-      if (lang === "fa" && idx === 6) {
+      if ((isFa && idx === 6) || (!isFa && (idx === 0 || idx === 6))) {
         span.style.color = "var(--accent-danger)";
         span.style.opacity = "0.85";
       }
@@ -1305,65 +1474,97 @@ function renderCalendar() {
     });
   }
 
-  el.calMonthName.textContent = (lang === "fa") ? JALALI_MONTHS[calState.viewMonth - 1] : JALALI_MONTHS_EN[calState.viewMonth - 1];
-  el.calYearNum.textContent = toNumByLang(calState.viewYear);
-
-  // روز هفته برای اول ماه شمسی (شنبه = 0، یکشنبه = 1 ... جمعه = 6)
-  const gStart = jalaliToGregorian(calState.viewYear, calState.viewMonth, 1);
-  const startDate = new Date(gStart.gy, gStart.gm - 1, gStart.gd);
-  const startDayOfWeek = (startDate.getDay() + 1) % 7;
-
-  const totalDays = getJalaliMonthDays(calState.viewYear, calState.viewMonth);
-
-  // امروز به شمسی
+  const activeSelected = (calState.target === "edit_due_picker") ? editSelectedDueDate : selectedDueDate;
   const now = new Date();
-  const todayJalali = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-
   el.calDaysGrid.innerHTML = "";
 
-  // سلول‌های خالی برای شیفت روز شروع ماه
-  for (let i = 0; i < startDayOfWeek; i++) {
-    const emptyCell = document.createElement("div");
-    emptyCell.className = "cal-day-cell other-month";
-    el.calDaysGrid.appendChild(emptyCell);
-  }
+  if (isFa) {
+    el.calMonthName.textContent = JALALI_MONTHS[calState.viewMonth - 1] || "";
+    el.calYearNum.textContent = toNumByLang(calState.viewYear);
 
-  const activeSelected = (calState.target === "edit_due_picker") ? editSelectedDueDate : selectedDueDate;
+    const gStart = jalaliToGregorian(calState.viewYear, calState.viewMonth, 1);
+    const startDate = new Date(gStart.gy, gStart.gm - 1, gStart.gd);
+    const startDayOfWeek = (startDate.getDay() + 1) % 7;
+    const totalDays = getJalaliMonthDays(calState.viewYear, calState.viewMonth);
+    const todayJalali = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
-  // روزهای ماه شمسی
-  for (let d = 1; d <= totalDays; d++) {
-    const cell = document.createElement("button");
-    cell.type = "button";
-    cell.className = "cal-day-cell";
-    cell.textContent = toNumByLang(d);
-
-    const gDay = jalaliToGregorian(calState.viewYear, calState.viewMonth, d);
-    const isoDate = `${gDay.gy}-${String(gDay.gm).padStart(2, "0")}-${String(gDay.gd).padStart(2, "0")}`;
-
-    if (calState.viewYear === todayJalali.jy && calState.viewMonth === todayJalali.jm && d === todayJalali.jd) {
-      cell.classList.add("today");
-      cell.title = lang === "fa" ? "امروز" : "Today";
+    for (let i = 0; i < startDayOfWeek; i++) {
+      const emptyCell = document.createElement("div");
+      emptyCell.className = "cal-day-cell other-month";
+      el.calDaysGrid.appendChild(emptyCell);
     }
 
-    if (calState.selectedIso === isoDate || activeSelected === isoDate) {
-      cell.classList.add("selected");
+    for (let d = 1; d <= totalDays; d++) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cal-day-cell";
+      cell.textContent = toNumByLang(d);
+
+      const gDay = jalaliToGregorian(calState.viewYear, calState.viewMonth, d);
+      const isoDate = `${gDay.gy}-${String(gDay.gm).padStart(2, "0")}-${String(gDay.gd).padStart(2, "0")}`;
+
+      if (calState.viewYear === todayJalali.jy && calState.viewMonth === todayJalali.jm && d === todayJalali.jd) {
+        cell.classList.add("today");
+        cell.title = "امروز";
+      }
+      if (calState.selectedIso === isoDate || activeSelected === isoDate) {
+        cell.classList.add("selected");
+      }
+      if ((startDayOfWeek + d - 1) % 7 === 6) {
+        cell.classList.add("weekend");
+      }
+      const hasTasks = todos.some((t) => t.due_date === isoDate && !t.completed);
+      if (hasTasks) {
+        cell.classList.add("has-tasks");
+        cell.title = (cell.title ? cell.title + " - " : "") + "دارای کارهای انجام‌نشده";
+      }
+
+      cell.addEventListener("click", () => applySelectedDate(isoDate));
+      el.calDaysGrid.appendChild(cell);
+    }
+  } else {
+    // Gregorian calendar
+    el.calMonthName.textContent = GREGORIAN_MONTHS_FULL_EN[calState.viewMonth - 1] || "";
+    el.calYearNum.textContent = String(calState.viewYear);
+
+    const firstDay = new Date(calState.viewYear, calState.viewMonth - 1, 1).getDay();
+    const totalDays = new Date(calState.viewYear, calState.viewMonth, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      const emptyCell = document.createElement("div");
+      emptyCell.className = "cal-day-cell other-month";
+      el.calDaysGrid.appendChild(emptyCell);
     }
 
-    if (lang === "fa" && (startDayOfWeek + d - 1) % 7 === 6) {
-      cell.classList.add("weekend");
+    for (let d = 1; d <= totalDays; d++) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cal-day-cell";
+      cell.textContent = String(d);
+
+      const isoDate = `${calState.viewYear}-${String(calState.viewMonth).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const isToday = now.getFullYear() === calState.viewYear && (now.getMonth() + 1) === calState.viewMonth && now.getDate() === d;
+
+      if (isToday) {
+        cell.classList.add("today");
+        cell.title = "Today";
+      }
+      if (calState.selectedIso === isoDate || activeSelected === isoDate) {
+        cell.classList.add("selected");
+      }
+      const dayOfWeek = (firstDay + d - 1) % 7;
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        cell.classList.add("weekend");
+      }
+      const hasTasks = todos.some((t) => t.due_date === isoDate && !t.completed);
+      if (hasTasks) {
+        cell.classList.add("has-tasks");
+        cell.title = (cell.title ? cell.title + " - " : "") + "Has pending tasks";
+      }
+
+      cell.addEventListener("click", () => applySelectedDate(isoDate));
+      el.calDaysGrid.appendChild(cell);
     }
-
-    const hasTasks = todos.some((t) => t.due_date === isoDate && !t.completed);
-    if (hasTasks) {
-      cell.classList.add("has-tasks");
-      cell.title = (cell.title ? cell.title + " - " : "") + (lang === "fa" ? "دارای کارهای انجام‌نشده" : "Has pending tasks");
-    }
-
-    cell.addEventListener("click", () => {
-      applySelectedDate(isoDate);
-    });
-
-    el.calDaysGrid.appendChild(cell);
   }
 }
 
@@ -1724,11 +1925,11 @@ function applyLanguage(lang) {
 }
 
 function updateCategoryDropdowns(lang) {
-  const t = I18N[lang] || I18N.fa;
+  const t = I18N[lang] || I18N.en;
   const list = t.categoriesList || [];
 
   if (el.selectCategory) {
-    const curVal = el.selectCategory.value;
+    const curVal = normalizeCategory(el.selectCategory.value);
     el.selectCategory.innerHTML = "";
     list.forEach(c => {
       const opt = document.createElement("option");
@@ -1736,11 +1937,12 @@ function updateCategoryDropdowns(lang) {
       opt.textContent = c.label;
       el.selectCategory.appendChild(opt);
     });
-    if (curVal) el.selectCategory.value = curVal;
+    const match = Array.from(el.selectCategory.options).find(o => normalizeCategory(o.value) === curVal);
+    if (match) el.selectCategory.value = match.value;
   }
 
   if (el.editTaskCategorySelect) {
-    const curVal = el.editTaskCategorySelect.value;
+    const curVal = normalizeCategory(el.editTaskCategorySelect.value);
     el.editTaskCategorySelect.innerHTML = "";
     list.forEach(c => {
       const opt = document.createElement("option");
@@ -1748,7 +1950,8 @@ function updateCategoryDropdowns(lang) {
       opt.textContent = c.label;
       el.editTaskCategorySelect.appendChild(opt);
     });
-    if (curVal) el.editTaskCategorySelect.value = curVal;
+    const match = Array.from(el.editTaskCategorySelect.options).find(o => normalizeCategory(o.value) === curVal);
+    if (match) el.editTaskCategorySelect.value = match.value;
   }
 }
 
@@ -1933,7 +2136,7 @@ function setupListeners() {
       if (task) {
         task.title = el.editTaskTitleInput.value.trim() || task.title;
         task.notes = el.editTaskNotesInput.value.trim();
-        task.category = el.editTaskCategorySelect.value;
+        task.category = normalizeCategory(el.editTaskCategorySelect.value);
         task.priority = editSelectedPriority;
         task.due_date = editSelectedDueDate;
         task.subtasks = editSubtasks;
@@ -2056,47 +2259,7 @@ function setupListeners() {
   });
 
   el.btnSampleData.addEventListener("click", async () => {
-    todos = [
-      {
-        id: "demo-1",
-        title: "مرور نقشه راه فصلی و تحویل‌های اسپرینت",
-        notes: "دامنه پروژه مفصل",
-        completed: false,
-        priority: "high",
-        category: "کار",
-        due_date: new Date().toISOString().split("T")[0],
-        created_at: new Date().toISOString(),
-        completed_at: null,
-        subtasks: [
-          { id: "sub-d1", title: "بررسی pull request‌ها", completed: true },
-          { id: "sub-d2", title: "به‌روزرسانی changelog", completed: false }
-        ]
-      },
-      {
-        id: "demo-2",
-        title: "ورزش: ۴۵ دقیقه تمرین قدرتی",
-        notes: "",
-        completed: true,
-        priority: "medium",
-        category: "سلامتی",
-        due_date: new Date().toISOString().split("T")[0],
-        created_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-        subtasks: []
-      },
-      {
-        id: "demo-3",
-        title: "مطالعه ۲۰ صفحه از طراحی سیستم‌های Rust",
-        notes: "",
-        completed: false,
-        priority: "low",
-        category: "مطالعه",
-        due_date: null,
-        created_at: new Date().toISOString(),
-        completed_at: null,
-        subtasks: []
-      }
-    ];
+    todos = getInitialSampleTasks(settings.lang || "en");
     await persistTodos();
     render();
     el.settingsModal.style.display = "none";
@@ -2173,22 +2336,20 @@ function setupListeners() {
     });
   }
 
-  // دکمه بازگشت به «امروز»
+  // Button return to Today
   if (el.calBtnToday) {
     el.calBtnToday.addEventListener("click", () => {
-      const now = new Date();
-      const { jy, jm } = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-      calState.viewYear = jy;
-      calState.viewMonth = jm;
+      initCalendarState();
       renderCalendar();
     });
   }
 
-  // دکمه‌های اقدام سریع در تقویم
+  // Quick Action Buttons in Calendar
   el.calQuickChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       const action = chip.dataset.quick;
       const now = new Date();
+      const lang = settings.lang || "en";
       if (action === "today") {
         applySelectedDate(now.toISOString().split("T")[0]);
       } else if (action === "tomorrow") {
@@ -2197,8 +2358,9 @@ function setupListeners() {
         applySelectedDate(tomorrow.toISOString().split("T")[0]);
       } else if (action === "next-saturday") {
         const target = new Date(now);
-        const day = target.getDay(); // 6 is Sat
-        const diff = (6 - day + 7) % 7 || 7;
+        const day = target.getDay();
+        const targetDay = (lang === "fa") ? 6 : 1;
+        const diff = (targetDay - day + 7) % 7 || 7;
         target.setDate(target.getDate() + diff);
         applySelectedDate(target.toISOString().split("T")[0]);
       } else if (action === "clear") {
@@ -2334,17 +2496,26 @@ function setupListeners() {
   }
 }
 
-// Bootstrap
+// Bootstrap & Lifecycle
 window.addEventListener("DOMContentLoaded", async () => {
   initElements();
+  await loadData();
   initCalendarState();
   setupListeners();
-  await loadData();
-  applyLanguage(settings.lang || "fa");
+  applyLanguage(settings.lang || "en");
 
-  // بررسی خودکار نسخه جدید در پس‌زمینه (در صورت اتصال به اینترنت)
+  // Automatic background update check
   setTimeout(() => {
     checkForUpdates(true);
   }, 3500);
+});
+
+// Flush in-memory state before unload/reload
+window.addEventListener("beforeunload", () => {
+  try {
+    localStorage.setItem("gleam_todos_cache", JSON.stringify(todos));
+    localStorage.setItem("gleam_settings_cache", JSON.stringify(settings));
+    localStorage.setItem("gleam_initialized", "true");
+  } catch (_) {}
 });
 

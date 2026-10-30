@@ -16,37 +16,85 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GET
 
 const PANEL_WIDTH: u32 = 420;
 
+fn default_id() -> String {
+    format!("item-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis())
+}
+
+fn default_priority() -> String {
+    "medium".to_string()
+}
+
+fn default_category() -> String {
+    "Personal".to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_shortcut() -> String {
+    "CommandOrControl+Shift+Space".to_string()
+}
+
+fn default_theme() -> String {
+    "theme-apple-frost".to_string()
+}
+
+fn default_lang() -> String {
+    "en".to_string()
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Subtask {
+    #[serde(default = "default_id")]
     pub id: String,
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub completed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TodoItem {
+    #[serde(default = "default_id")]
     pub id: String,
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub notes: Option<String>,
+    #[serde(default)]
     pub completed: bool,
+    #[serde(default = "default_priority")]
     pub priority: String, // "low", "medium", "high"
+    #[serde(default = "default_category")]
     pub category: String, // "Work", "Personal", "Ideas", "Daily", etc.
+    #[serde(default, alias = "dueDate")]
     pub due_date: Option<String>,
+    #[serde(default, alias = "createdAt")]
     pub created_at: String,
+    #[serde(default, alias = "completedAt")]
     pub completed_at: Option<String>,
+    #[serde(default)]
     pub subtasks: Vec<Subtask>,
 }
 
-fn default_lang() -> String {
-    "fa".to_string()
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoadTodosResponse {
+    pub exists: bool,
+    pub todos: Vec<TodoItem>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppSettings {
+    #[serde(default = "default_true")]
     pub sound_enabled: bool,
+    #[serde(default = "default_true")]
     pub always_on_top: bool,
+    #[serde(default)]
     pub close_on_blur: bool,
+    #[serde(default = "default_shortcut")]
     pub shortcut: String,
+    #[serde(default = "default_theme")]
     pub theme: String,
     #[serde(default = "default_lang")]
     pub lang: String,
@@ -62,7 +110,7 @@ impl Default for AppSettings {
             close_on_blur: false,
             shortcut: "CommandOrControl+Shift+Space".to_string(),
             theme: "theme-apple-frost".to_string(),
-            lang: "fa".to_string(),
+            lang: "en".to_string(),
             launch_at_startup: false,
         }
     }
@@ -167,22 +215,109 @@ fn get_settings_file_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(get_data_dir(app)?.join("settings.json"))
 }
 
+/// Atomically writes JSON to target path using a temporary file and keeps a backup (.bak)
+fn atomic_write_json<T: Serialize>(path: &PathBuf, data: &T) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let json_bytes = serde_json::to_string_pretty(data).map_err(|e| e.to_string())?;
+    let tmp_path = path.with_extension("tmp");
+    let bak_path = path.with_extension("bak");
+
+    // Write to temporary file first
+    fs::write(&tmp_path, json_bytes).map_err(|e| e.to_string())?;
+
+    // Create a backup of the current good file before replacing
+    if path.exists() {
+        let _ = fs::copy(path, &bak_path);
+    }
+
+    // Atomically replace target with tmp
+    #[cfg(target_os = "windows")]
+    {
+        let _ = fs::remove_file(path);
+        fs::rename(&tmp_path, path).map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        fs::rename(&tmp_path, path).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+fn read_todos_from_disk(app: &AppHandle) -> Result<(bool, Vec<TodoItem>), String> {
+    let path = get_todos_file_path(app)?;
+    let bak_path = path.with_extension("bak");
+
+    if !path.exists() {
+        // If main file doesn't exist, check if a backup exists to recover
+        if bak_path.exists() {
+            if let Ok(data) = fs::read_to_string(&bak_path) {
+                if let Ok(todos) = serde_json::from_str::<Vec<TodoItem>>(&data) {
+                    let _ = fs::copy(&bak_path, &path);
+                    return Ok((true, todos));
+                }
+            }
+        }
+        return Ok((false, Vec::new()));
+    }
+
+    let data = match fs::read_to_string(&path) {
+        Ok(d) => d,
+        Err(e) => {
+            // Attempt to restore from backup
+            if bak_path.exists() {
+                if let Ok(bak_data) = fs::read_to_string(&bak_path) {
+                    if let Ok(todos) = serde_json::from_str::<Vec<TodoItem>>(&bak_data) {
+                        return Ok((true, todos));
+                    }
+                }
+            }
+            return Err(e.to_string());
+        }
+    };
+
+    match serde_json::from_str::<Vec<TodoItem>>(&data) {
+        Ok(todos) => Ok((true, todos)),
+        Err(err) => {
+            eprintln!("Failed to parse todos.json: {err}. Attempting backup recovery...");
+            if bak_path.exists() {
+                if let Ok(bak_data) = fs::read_to_string(&bak_path) {
+                    if let Ok(todos) = serde_json::from_str::<Vec<TodoItem>>(&bak_data) {
+                        let _ = fs::copy(&bak_path, &path);
+                        return Ok((true, todos));
+                    }
+                }
+            }
+            // Preserve corrupt file for user safety rather than discarding
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let corrupt_path = path.with_extension(format!("corrupt_{timestamp}.json"));
+            let _ = fs::copy(&path, &corrupt_path);
+            Ok((true, Vec::new()))
+        }
+    }
+}
+
+#[tauri::command]
+fn load_todos(app: AppHandle) -> Result<LoadTodosResponse, String> {
+    let (exists, todos) = read_todos_from_disk(&app)?;
+    Ok(LoadTodosResponse { exists, todos })
+}
+
 #[tauri::command]
 fn get_todos(app: AppHandle) -> Result<Vec<TodoItem>, String> {
-    let path = get_todos_file_path(&app)?;
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let todos: Vec<TodoItem> = serde_json::from_str(&data).unwrap_or_default();
+    let (_, todos) = read_todos_from_disk(&app)?;
     Ok(todos)
 }
 
 #[tauri::command]
 fn save_todos(app: AppHandle, todos: Vec<TodoItem>) -> Result<(), String> {
     let path = get_todos_file_path(&app)?;
-    let data = serde_json::to_string_pretty(&todos).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| e.to_string())?;
+    atomic_write_json(&path, &todos)?;
     Ok(())
 }
 
@@ -205,8 +340,7 @@ fn save_settings(app: AppHandle, state: tauri::State<AppState>, mut settings: Ap
     settings.launch_at_startup = check_windows_autostart();
 
     let path = get_settings_file_path(&app)?;
-    let data = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| e.to_string())?;
+    atomic_write_json(&path, &settings)?;
     if let Ok(mut s) = state.settings.lock() {
         *s = settings.clone();
     }
@@ -351,6 +485,7 @@ pub fn run() {
             settings: Mutex::new(AppSettings::default()),
         })
         .invoke_handler(tauri::generate_handler![
+            load_todos,
             get_todos,
             save_todos,
             get_settings,

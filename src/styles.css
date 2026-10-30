@@ -791,8 +791,7 @@ button {
   font-family: var(--font-primary);
   font-size: 12.5px;
   font-weight: var(--font-weight-bold);
-  text-align: right;
-  direction: rtl;
+  text-align: start;
   user-select: text;
   -webkit-user-select: text;
 }
@@ -895,8 +894,7 @@ button {
   color: var(--text-muted);
   outline: none;
   cursor: pointer;
-  direction: rtl;
-  text-align: right;
+  text-align: start;
   transition: border-color var(--transition-fast);
 }
 
@@ -1026,8 +1024,7 @@ button {
   font-weight: var(--font-weight-bold);
   font-family: var(--font-primary);
   color: var(--text-main);
-  text-align: right;
-  direction: rtl;
+  text-align: start;
   user-select: text;
   -webkit-user-select: text;
 }
@@ -1237,8 +1234,22 @@ button {
   user-select: text;
   -webkit-user-select: text;
   transition: color var(--transition-fast), opacity var(--transition-fast);
-  text-align: right;
-  direction: rtl;
+  text-align: start;
+}
+
+.task-notes-snippet {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin-top: 3px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-height: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: start;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Completed Task: WCAG Compliant High Readability */
@@ -1405,8 +1416,7 @@ button {
   font-size: 10.5px;
   color: var(--text-main);
   outline: none;
-  text-align: right;
-  direction: rtl;
+  text-align: start;
 }
 
 .subtask-input:focus {
