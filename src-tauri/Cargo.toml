@@ -1,6 +1,6 @@
 [package]
 name = "gleam"
-version = "1.0.3"
+version = "1.0.4"
 description = "Gleam - Modern Frosted Glass Task Drawer"
 authors = ["Amirreza Mortazavifard"]
 edition = "2024"

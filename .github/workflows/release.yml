@@ -44,14 +44,18 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Gleam ${{ github.ref_name }}'
           releaseBody: |
-            ## ✨ Gleam ${{ github.ref_name }} — Modern Frosted Glass Task Drawer
+            ## ✨ Gleam ${{ github.ref_name }} — Premium Obsidian Glass Desktop Companion
 
-            ### 🚀 What's New in v1.0.3:
-            - **Telegram-Style In-App Auto-Updater:** Download and install updates completely in-app with zero manual downloads or browser visits.
-            - **Real-Time Streaming Progress Bar:** Frosted glass progress indicator with live percentage and MB counters in both the top banner and settings panel.
-            - **Silent NSIS Installation & Auto-Restart:** Headless `/S` background installer execution with seamless restart into the updated version.
-            - **Multi-Source Binary Detection:** Automatically picks up the newest official Windows NSIS setup package from GitHub Releases.
-            - **Bilingual Update Status:** Complete Persian and English status messages and notifications.
+            ### 🚀 What's New in v1.0.4:
+            - **Obsidian Glass Design System:** Complete redesign into a premium, minimalist desktop companion widget inspired by Apple macOS design principles.
+            - **Refined Obsidian Navy Palette:** Built on deep obsidian navy (`#0B1220`) canvas, dark acrylic surfaces (`#111D2D`, `#19283B`), and Sapphire Cyan (`#47D1E2`) accents.
+            - **Simplified Executive Header:** Clear visual hierarchy, unified 28px glass controls, live status dot, and persistent shortcut pill.
+            - **Elegant Daily Overview:** Mathematical circular progress ring, dynamic motivational motto, and clean segmented progress counters.
+            - **Floating Task Input:** Floating obsidian card with deep dark input well and tactile Sapphire Cyan quick-add button.
+            - **Minimal Segmented Filters:** macOS-style unified segmented tabs (All, Active, Done, Urgent) replacing loud neon fills.
+            - **Subtle Task Cards:** Subtle surfaces with 3px leading-edge priority accent stripes, custom squircle checkboxes, and hover-revealed action buttons.
+            - **Integrated Search & Minimal Footer:** Clean integrated search pill and contextual task count footer.
+            - **Persian RTL & English Parity:** Enhanced bilingual alignment with Vazirmatn typography and forced LTR shortcut rendering.
 
             ### 📦 Downloads:
             Download the Windows setup installer (`.exe`) or Windows Installer (`.msi`) below.
