@@ -2,8 +2,31 @@
 // GLASSTODO - کنترل‌کننده مشتری (فارسی + RTL)
 // ==========================================================================
 
-const { invoke } = window.__TAURI__.core;
-const { listen } = window.__TAURI__.event;
+const isTauri = typeof window !== "undefined" && window.__TAURI__ && window.__TAURI__.core;
+const invoke = isTauri 
+  ? window.__TAURI__.core.invoke 
+  : async (cmd, args) => {
+      if (cmd === "get_settings") {
+        const s = localStorage.getItem("gleam_settings_cache");
+        return s ? JSON.parse(s) : null;
+      }
+      if (cmd === "load_todos") {
+        const t = localStorage.getItem("gleam_todos_cache");
+        return { exists: !!t, todos: t ? JSON.parse(t) : [] };
+      }
+      if (cmd === "save_todos") {
+        localStorage.setItem("gleam_todos_cache", JSON.stringify(args?.todos || []));
+        return true;
+      }
+      if (cmd === "save_settings") {
+        localStorage.setItem("gleam_settings_cache", JSON.stringify(args?.settings || {}));
+        return true;
+      }
+      return null;
+    };
+const listen = isTauri 
+  ? window.__TAURI__.event.listen 
+  : () => () => {};
 
 // تبدیل اعداد لاتین به فارسی
 function toPersianNum(num) {

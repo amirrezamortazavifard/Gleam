@@ -784,8 +784,10 @@ pub fn run() {
                     let _ = window_vibrancy::apply_vibrancy(&win, window_vibrancy::NSVisualEffectMaterial::HudWindow, None, None);
                 }
 
-                // Initial dock position
+                // Initial dock position & show
                 let _ = dock_window_right(&win);
+                let _ = win.show();
+                let _ = win.set_focus();
 
                 // Setup close-on-blur listener
                 let app_handle_for_focus = handle.clone();

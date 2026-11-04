@@ -19,7 +19,7 @@
         "shadow": true,
         "skipTaskbar": true,
         "alwaysOnTop": true,
-        "visible": false,
+        "visible": true,
         "resizable": false
       }
     ],
